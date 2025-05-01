@@ -41,10 +41,18 @@ Before you begin, ensure you have the following installed:
    - Get your Firebase configuration
 
 4. Set up Firebase configuration:
-   - Copy `src/firebase.example.ts` to `src/firebase.ts`
-   - Open `src/firebase.ts`
-   - Replace the placeholder values in the `firebaseConfig` object with your actual Firebase configuration
-   - Note: `firebase.ts` is excluded from git to protect your API keys and sensitive information
+   - Create a `.env` file in the root directory
+   - Add your Firebase configuration to the `.env` file using the following format:
+     ```
+     VITE_FIREBASE_API_KEY=your_api_key
+     VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+     VITE_FIREBASE_PROJECT_ID=your_project_id
+     VITE_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
+     VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+     VITE_FIREBASE_APP_ID=your_app_id
+     VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
+     ```
+   - Note: The `.env` file is excluded from git to protect your API keys and sensitive information
 
 5. Start the development server:
    ```bash
