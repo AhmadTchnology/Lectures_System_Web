@@ -34,7 +34,6 @@ dist-ssr
 # Firebase
 .firebase/
 firebase-debug.log
-src/firebase.ts
 
 # Bolt
 .bolt/
