@@ -40,9 +40,11 @@ Before you begin, ensure you have the following installed:
    - Create a Storage bucket
    - Get your Firebase configuration
 
-4. Update Firebase configuration:
+4. Set up Firebase configuration:
+   - Copy `src/firebase.example.ts` to `src/firebase.ts`
    - Open `src/firebase.ts`
-   - Replace the `firebaseConfig` object with your configuration
+   - Replace the placeholder values in the `firebaseConfig` object with your actual Firebase configuration
+   - Note: `firebase.ts` is excluded from git to protect your API keys and sensitive information
 
 5. Start the development server:
    ```bash
