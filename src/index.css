@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme transition utility */
+.theme-transition {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+/* Apply theme attribute to html element */
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
 @layer components {
   .flex {
     display: flex;

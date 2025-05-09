@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-// @ts-ignore
 import { LogIn, LogOut, Upload, FileText, Users, User, Info, Menu, X, Search, Filter, Lock, Plus, Trash, Heart, HeartOff, CheckCircle, UserX } from 'lucide-react';
 import classNames from 'classnames';
 import './App.css';
+import ThemeToggle from './components/ThemeToggle.jsx';
 
 // Firebase imports
 import { 
@@ -1544,7 +1544,7 @@ function App() {
             </div>
             <div className="creator-info">
               <p className="creator-name">Ahmed Shukor</p>
-              <p className="creator-title">Department of Computer Engineering</p>
+              <p className="creator-title">Computer Network Engineer</p>
             </div>
           </div>
           
@@ -1787,6 +1787,7 @@ function App() {
               <h1>LMS</h1>
               <p>Lecture Management</p>
             </div>
+            <ThemeToggle />
             <button className="close-sidebar" onClick={toggleSidebar}>
               <X size={24} />
             </button>
