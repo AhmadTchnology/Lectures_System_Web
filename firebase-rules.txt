@@ -44,6 +44,25 @@ service cloud.firestore {
       allow create: if request.auth != null;
       allow update, delete: if request.auth != null && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      // Allow users to update their own unreadAnnouncements
+      allow update: if request.auth != null && 
+        request.auth.uid == userId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['unreadAnnouncements']);
+    }
+    
+    // Allow admin and teacher roles to manage announcements
+    match /announcements/{announcementId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher'
+      );
+      allow delete: if request.auth != null && (
+        // Allow admins to delete any announcement
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        // Allow users to delete their own announcements
+        resource.data.createdBy == request.auth.uid
+      );
     }
   }
 }

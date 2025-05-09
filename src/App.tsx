@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+// @ts-ignore
 import { LogIn, LogOut, Upload, FileText, Users, User, Info, Menu, X, Search, Filter, Lock, Plus, Trash, Heart, HeartOff, CheckCircle, UserX } from 'lucide-react';
 import classNames from 'classnames';
 import './App.css';
@@ -47,6 +48,7 @@ interface User {
   favorites?: string[];
   completedLectures?: string[];
   lastSignOut?: number;
+  unreadAnnouncements?: string[];
 }
 
 // Lecture interface
@@ -58,6 +60,18 @@ interface Lecture {
   pdfUrl: string;
   uploadedBy: string;
   uploadDate: string;
+}
+
+// Announcement interface
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  type: 'homework' | 'exam' | 'event' | 'other';
+  createdBy: string;
+  creatorName?: string;
+  createdAt: any;
+  expiryDate?: string;
 }
 
 // Category interface
@@ -89,6 +103,9 @@ function App() {
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [filteredLectures, setFilteredLectures] = useState<Lecture[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [showNotifications, setShowNotifications] = useState<boolean>(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
   
   // UI states
   const [activeView, setActiveView] = useState<string>('login');
@@ -115,6 +132,12 @@ function App() {
   const [loginError, setLoginError] = useState<string>('');
   const [signupError, setSignupError] = useState<string>('');
   
+  // Announcement form states
+  const [newAnnouncementTitle, setNewAnnouncementTitle] = useState<string>('');
+  const [newAnnouncementContent, setNewAnnouncementContent] = useState<string>('');
+  const [newAnnouncementType, setNewAnnouncementType] = useState<'homework' | 'exam' | 'event' | 'other'>('homework');
+  const [newAnnouncementExpiryDate, setNewAnnouncementExpiryDate] = useState<string>('');
+  
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterSubject, setFilterSubject] = useState<string>('all');
@@ -134,7 +157,7 @@ function App() {
 
   // Add force sign out function
   const handleForceSignOut = async () => {
-    if (!currentUser?.role === 'admin') return;
+    if (currentUser?.role !== 'admin') return;
     
     if (!confirm('Are you sure you want to force all users to sign out?')) {
       return;
@@ -201,6 +224,9 @@ function App() {
             }
             if (!userData.completedLectures) {
               updates.completedLectures = [];
+            }
+            if (!userData.unreadAnnouncements) {
+              updates.unreadAnnouncements = [];
             }
             
             // Only update if there are missing fields
@@ -273,6 +299,36 @@ function App() {
         })) as User[];
         
         setUsers(usersList);
+      });
+      
+      return () => unsubscribe();
+    }
+  }, [isAuthenticated, currentUser]);
+  
+  // Subscribe to announcements collection
+  useEffect(() => {
+    if (isAuthenticated) {
+      const announcementsQuery = query(
+        collection(db, 'announcements'),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const unsubscribe = onSnapshot(announcementsQuery, (snapshot) => {
+        const announcementsList = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Announcement[];
+        
+        setAnnouncements(announcementsList);
+        
+        // Calculate unread announcements
+        if (currentUser) {
+          const unreadAnnouncements = currentUser.unreadAnnouncements || [];
+          const count = announcementsList.filter(announcement => 
+            !unreadAnnouncements.includes(announcement.id)
+          ).length;
+          setUnreadCount(count);
+        }
       });
       
       return () => unsubscribe();
@@ -409,6 +465,103 @@ function App() {
     }
   };
 
+  // Add new announcement (admin and teacher only)
+  const handleAddAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'teacher')) return;
+    if (!newAnnouncementTitle.trim() || !newAnnouncementContent.trim()) return;
+    
+    setIsLoading(true);
+    
+    try {
+      // Create announcement in Firestore with creator name
+      const newAnnouncement = {
+        title: newAnnouncementTitle.trim(),
+        content: newAnnouncementContent.trim(),
+        type: newAnnouncementType,
+        createdBy: currentUser.id,
+        creatorName: currentUser.name, // Store creator name directly
+        createdAt: serverTimestamp(),
+        expiryDate: newAnnouncementExpiryDate || null
+      };
+      
+      await addDoc(collection(db, 'announcements'), newAnnouncement);
+      
+      // Reset form
+      setNewAnnouncementTitle('');
+      setNewAnnouncementContent('');
+      setNewAnnouncementType('homework');
+      setNewAnnouncementExpiryDate('');
+      
+      alert('Announcement created successfully!');
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      alert('Error creating announcement');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Delete announcement (admin and creator only)
+  const handleDeleteAnnouncement = async (announcementId: string, createdBy: string) => {
+    // Check if user has permission to delete
+    if (currentUser?.role !== 'admin' && currentUser?.id !== createdBy) {
+      alert('You do not have permission to delete this announcement');
+      return;
+    }
+    
+    if (!confirm('Are you sure you want to delete this announcement?')) {
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // Delete from Firestore
+      await deleteDoc(doc(db, 'announcements', announcementId));
+      
+      alert('Announcement deleted successfully');
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      alert('Error deleting announcement');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Mark announcement as read
+  const markAnnouncementAsRead = async (announcementId: string) => {
+    if (!currentUser) return;
+    
+    try {
+      const userRef = doc(db, 'users', currentUser.id);
+      const unreadAnnouncements = currentUser.unreadAnnouncements || [];
+      
+      // If already read, do nothing
+      if (unreadAnnouncements.includes(announcementId)) return;
+      
+      // Update local state
+      const updatedUser = {
+        ...currentUser,
+        unreadAnnouncements: [...unreadAnnouncements, announcementId]
+      };
+      setCurrentUser(updatedUser);
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      
+      // Update Firestore
+      await updateDoc(userRef, {
+        unreadAnnouncements: updatedUser.unreadAnnouncements
+      });
+    } catch (error) {
+      console.error('Error marking announcement as read:', error);
+    }
+  };
+  
+  // Toggle notifications panel
+  const toggleNotifications = () => {
+    setShowNotifications(!showNotifications);
+  };
+  
   // Add new user (admin only)
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1403,6 +1556,142 @@ function App() {
     </div>
   );
 
+  // Render announcements section
+  const renderAnnouncements = () => (
+    <div className="content-container">
+      <h2 className="section-title">Announcements</h2>
+      
+      {(currentUser?.role === 'admin' || currentUser?.role === 'teacher') && (
+        <div className="card">
+          <h3 className="card-title">Create New Announcement</h3>
+          
+          <form onSubmit={handleAddAnnouncement}>
+            <div className="form-group">
+              <label htmlFor="announcementTitle">Title</label>
+              <input
+                type="text"
+                id="announcementTitle"
+                className="input-field"
+                value={newAnnouncementTitle}
+                onChange={(e) => setNewAnnouncementTitle(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="announcementContent">Content</label>
+              <textarea
+                id="announcementContent"
+                className="input-field"
+                value={newAnnouncementContent}
+                onChange={(e) => setNewAnnouncementContent(e.target.value)}
+                rows={4}
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="announcementType">Type</label>
+              <select
+                id="announcementType"
+                className="input-field"
+                value={newAnnouncementType}
+                onChange={(e) => setNewAnnouncementType(e.target.value as 'homework' | 'exam' | 'event' | 'other')}
+              >
+                <option value="homework">Homework</option>
+                <option value="exam">Exam</option>
+                <option value="event">Event</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="announcementExpiry">Expiry Date (Optional)</label>
+              <input
+                type="date"
+                id="announcementExpiry"
+                className="input-field"
+                value={newAnnouncementExpiryDate}
+                onChange={(e) => setNewAnnouncementExpiryDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+            
+            <button
+              type="submit"
+              className="btn-primary w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span className="loading-spinner"></span>
+              ) : (
+                <>
+                  <Plus size={18} /> Create Announcement
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+      )}
+      
+      <div className="announcement-grid">
+        {announcements.length > 0 ? (
+          announcements.map((announcement) => {
+            const isUnread = currentUser?.unreadAnnouncements?.includes(announcement.id) === false;
+            const creator = users.find(user => user.id === announcement.createdBy);
+            
+            return (
+              <div 
+                key={announcement.id} 
+                className={`announcement-card ${isUnread ? 'announcement-unread' : ''}`}
+                onClick={() => markAnnouncementAsRead(announcement.id)}
+              >
+                <div className="announcement-card-header">
+                  <h3 className="announcement-title">{announcement.title}</h3>
+                  <span className={`announcement-type announcement-type-${announcement.type}`}>
+                    {announcement.type}
+                  </span>
+                </div>
+                
+                <div className="announcement-card-body">
+                  <p className="announcement-content">{announcement.content}</p>
+                </div>
+                
+                <div className="announcement-card-footer">
+                  <div className="announcement-meta">
+                    <span className="announcement-creator">By: {announcement.creatorName || creator?.name || 'Unknown'}</span>
+                    <span className="announcement-date">
+                      {announcement.createdAt?.toDate ? 
+                        new Date(announcement.createdAt.toDate()).toLocaleDateString() : 
+                        'Just now'}
+                    </span>
+                  </div>
+                  
+                  {(currentUser?.role === 'admin' || currentUser?.id === announcement.createdBy) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteAnnouncement(announcement.id, announcement.createdBy);
+                      }}
+                      className="btn-danger"
+                      disabled={isLoading}
+                    >
+                      <Trash size={18} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="no-results">
+            <p>No announcements available.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+  
   // Render navigation
   const renderNavigation = () => (
     <>
@@ -1411,6 +1700,81 @@ function App() {
           <Menu size={24} />
         </button>
         <h1>LMS</h1>
+        
+        <div className="notification-container">
+          <button 
+            className="notification-button" 
+            onClick={toggleNotifications}
+          >
+            <div className="notification-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              {unreadCount > 0 && (
+                <span className="notification-badge">{unreadCount}</span>
+              )}
+            </div>
+          </button>
+          
+          {showNotifications && (
+            <div className="notification-dropdown">
+              <div className="notification-header">
+                <h3>Notifications</h3>
+                <button 
+                  className="notification-close" 
+                  onClick={toggleNotifications}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              
+              <div className="notification-list">
+                {announcements.length > 0 ? (
+                  announcements.slice(0, 5).map(announcement => {
+                    const isUnread = currentUser?.unreadAnnouncements?.includes(announcement.id) === false;
+                    return (
+                      <div 
+                        key={announcement.id} 
+                        className={`notification-item ${isUnread ? 'notification-unread' : ''}`}
+                        onClick={() => {
+                          markAnnouncementAsRead(announcement.id);
+                          setActiveView('announcements');
+                          setShowNotifications(false);
+                        }}
+                      >
+                        <div className="notification-content">
+                          <h4>{announcement.title}</h4>
+                          <p>{announcement.content.substring(0, 50)}...</p>
+                          <small>By: {announcement.creatorName || 'Unknown'}</small>
+                        </div>
+                        <span className={`notification-type notification-type-${announcement.type}`}>
+                          {announcement.type}
+                        </span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="notification-empty">
+                    <p>No notifications</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="notification-footer">
+                <button 
+                  className="btn-secondary w-full"
+                  onClick={() => {
+                    setActiveView('announcements');
+                    setShowNotifications(false);
+                  }}
+                >
+                  View All
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       
       {(isSidebarOpen || window.innerWidth > 768) && (
@@ -1448,6 +1812,25 @@ function App() {
                 }}
               >
                 <FileText size={20} /> Lectures
+              </button>
+            </li>
+            
+            <li>
+              <button
+                className={activeView === 'announcements' ? 'active' : ''}
+                onClick={() => {
+                  setActiveView('announcements');
+                  setIsSidebarOpen(false);
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                Announcements
+                {unreadCount > 0 && (
+                  <span className="nav-badge">{unreadCount}</span>
+                )}
               </button>
             </li>
             
@@ -1514,6 +1897,7 @@ function App() {
           <main className="main-content">
             {activeView === 'users' && renderUserManagement()}
             {activeView === 'lectures' && renderLecturesList()}
+            {activeView === 'announcements' && renderAnnouncements()}
             {activeView === 'about' && renderAboutUs()}
           </main>
         </div>
