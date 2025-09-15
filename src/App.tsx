@@ -1543,7 +1543,7 @@ function App() {
               <User size={32} />
             </div>
             <div className="creator-info">
-              <p className="creator-name">Ahmed Shukor</p>
+              <p className="creator-name">Ahmed Shukur Hameed</p>
               <p className="creator-title">Computer Network Engineer</p>
             </div>
           </div>
