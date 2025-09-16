@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LogIn, LogOut, Upload, FileText, Users, User, Info, Menu, X, Search, Filter, Lock, Plus, Trash, Heart, HeartOff, CheckCircle, UserX } from 'lucide-react';
+import { LogIn, LogOut, Upload, FileText, Users, User, Info, Menu, X, Search, Filter, Lock, Plus, Trash, Heart, HeartOff, CheckCircle, UserX, Bot } from 'lucide-react';
 import classNames from 'classnames';
 import './App.css';
 import ThemeToggle from './components/ThemeToggle.jsx';
+import AIQuizGenerator from './components/AIQuizGenerator';
 
 // Firebase imports
 import { 
@@ -1818,6 +1819,18 @@ function App() {
             
             <li>
               <button
+                className={activeView === 'ai-quiz' ? 'active' : ''}
+                onClick={() => {
+                  setActiveView('ai-quiz');
+                  setIsSidebarOpen(false);
+                }}
+              >
+                <Bot size={20} /> AI Quiz Generator
+              </button>
+            </li>
+            
+            <li>
+              <button
                 className={activeView === 'announcements' ? 'active' : ''}
                 onClick={() => {
                   setActiveView('announcements');
@@ -1900,6 +1913,7 @@ function App() {
             {activeView === 'lectures' && renderLecturesList()}
             {activeView === 'announcements' && renderAnnouncements()}
             {activeView === 'about' && renderAboutUs()}
+            {activeView === 'ai-quiz' && <AIQuizGenerator />}
           </main>
         </div>
       )}
