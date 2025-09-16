@@ -61,7 +61,7 @@ const AIQuizGenerator: React.FC = () => {
   const [startTime, setStartTime] = useState<number | null>(null);
 
   // n8n webhook URLs - replace with your actual n8n instance URL
-  const N8N_BASE_URL = 'http://localhost:5678/webhook-test';
+  const N8N_BASE_URL = 'https://n8n-utech.utopiatech.dpdns.org/webhook-test';
 
   useEffect(() => {
     fetchTopics();
