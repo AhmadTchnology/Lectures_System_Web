@@ -728,13 +728,12 @@ function App() {
       console.log('Uploading file:', selectedFile.name);
       console.log('File size:', selectedFile.size, 'bytes');
 
-      const webhookUrl = 'http://n8n-utech.utopiatech.dpdns.org/webhook-test/upload-to-zipline';
+      const webhookUrl = '/api/upload';
       console.log('Webhook URL:', webhookUrl);
 
       const response = await fetch(webhookUrl, {
         method: 'POST',
         body: formData,
-        mode: 'cors',
       });
 
       console.log('Response status:', response.status);
