@@ -750,15 +750,20 @@ function App() {
 
       const result = await response.json();
       console.log('Response data:', result);
+      console.log('Files array:', result.files);
+      console.log('First file:', result.files?.[0]);
 
-      const uploadedUrl = result.files?.[0] || result.url;
+      // Correct: Access the url property from the first file object
+      const uploadedUrl = result.files?.[0]?.url || result.url;
+
+      console.log('Extracted URL:', uploadedUrl);
 
       if (uploadedUrl) {
         setNewLectureUrl(uploadedUrl);
         setUploadProgress(100);
       } else {
         throw new Error('No URL returned from upload. Response: ' + JSON.stringify(result));
-      }
+   }
     } catch (error: any) {
       console.error('Error uploading file:', error);
 
