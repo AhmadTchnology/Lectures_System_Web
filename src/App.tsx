@@ -1586,6 +1586,7 @@ function App() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn-secondary flex-1"
+                        style="text-decoration:none;"
                       >
                         View PDF
                       </a>
