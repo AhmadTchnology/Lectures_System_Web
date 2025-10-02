@@ -127,6 +127,10 @@ function App() {
   const [newLectureSubject, setNewLectureSubject] = useState<string>('');
   const [newLectureStage, setNewLectureStage] = useState<string>('');
   const [newLectureUrl, setNewLectureUrl] = useState<string>('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploadError, setUploadError] = useState<string>('');
   const [newCategory, setNewCategory] = useState<string>('');
   const [newCategoryType, setNewCategoryType] = useState<'subject' | 'stage'>('subject');
   const [loginError, setLoginError] = useState<string>('');
@@ -702,14 +706,58 @@ function App() {
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setUploadError('');
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) return;
+
+    setUploading(true);
+    setUploadError('');
+    setUploadProgress(0);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const response = await fetch('YOUR_N8N_WEBHOOK_URL/webhook/upload-to-zipline', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+
+      if (data.url) {
+        setNewLectureUrl(data.url);
+        setUploadProgress(100);
+      } else {
+        throw new Error('No URL returned from upload');
+      }
+    } catch (error: any) {
+      console.error('Error uploading file:', error);
+      setUploadError(error.message || 'Error uploading file');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   // Upload new lecture (teacher only)
   const handleUploadLecture = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!newLectureUrl || !currentUser) return;
-    
+
     setIsLoading(true);
-    
+
     try {
       // Create lecture document in Firestore
       const newLecture = {
@@ -720,16 +768,18 @@ function App() {
         uploadedBy: currentUser.id,
         uploadDate: new Date().toISOString().split('T')[0]
       };
-      
+
       // Add lecture to Firestore
       await addDoc(collection(db, 'lectures'), newLecture);
-      
+
       // Reset form
       setNewLectureTitle('');
       setNewLectureSubject('');
       setNewLectureStage('');
       setNewLectureUrl('');
-      
+      setSelectedFile(null);
+      setUploadProgress(0);
+
       alert('Lecture uploaded successfully!');
     } catch (error: any) {
       console.error('Error uploading lecture:', error);
@@ -1323,16 +1373,77 @@ function App() {
           </select>
         </div>
         <div className="form-group">
-          <label htmlFor="lectureUrl">PDF URL</label>
-          <input
-            type="url"
-            id="lectureUrl"
-            value={newLectureUrl}
-            onChange={(e) => setNewLectureUrl(e.target.value)}
-            required
-            className="input-field"
-            placeholder="Enter PDF URL"
-          />
+          <label htmlFor="lectureFile">Upload PDF File</label>
+          <div className="file-upload-container">
+            <input
+              type="file"
+              id="lectureFile"
+              accept=".pdf"
+              onChange={handleFileSelect}
+              className="file-input"
+              style={{ display: 'none' }}
+            />
+            <label htmlFor="lectureFile" className="file-input-label">
+              <Upload size={20} />
+              {selectedFile ? selectedFile.name : 'Choose a PDF file'}
+            </label>
+
+            {selectedFile && !newLectureUrl && (
+              <button
+                type="button"
+                onClick={handleFileUpload}
+                disabled={uploading}
+                className="btn-secondary"
+                style={{ marginTop: '0.5rem' }}
+              >
+                {uploading ? (
+                  <>
+                    <span className="loading-spinner"></span>
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload size={18} />
+                    Upload to Server
+                  </>
+                )}
+              </button>
+            )}
+
+            {uploading && (
+              <div className="upload-progress">
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+
+            {uploadError && (
+              <div className="error-message" style={{ marginTop: '0.5rem' }}>
+                {uploadError}
+              </div>
+            )}
+
+            {newLectureUrl && (
+              <div className="success-message" style={{ marginTop: '0.5rem' }}>
+                File uploaded successfully!
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(newLectureUrl);
+                    alert('URL copied to clipboard!');
+                  }}
+                  className="btn-secondary"
+                  style={{ marginLeft: '0.5rem', padding: '0.5rem' }}
+                >
+                  Copy URL
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <button 
           type="submit" 
