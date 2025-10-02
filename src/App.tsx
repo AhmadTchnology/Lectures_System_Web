@@ -725,26 +725,44 @@ function App() {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const response = await fetch('http://n8n-utech.utopiatech.dpdns.org/webhook-test/upload-to-zipline', {
+      console.log('Uploading file:', selectedFile.name);
+      console.log('File size:', selectedFile.size, 'bytes');
+
+      const webhookUrl = 'http://n8n-utech.utopiatech.dpdns.org/webhook-test/upload-to-zipline';
+      console.log('Webhook URL:', webhookUrl);
+
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         body: formData,
+        mode: 'cors',
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (data.url) {
         setNewLectureUrl(data.url);
         setUploadProgress(100);
       } else {
-        throw new Error('No URL returned from upload');
+        throw new Error('No URL returned from upload. Response: ' + JSON.stringify(data));
       }
     } catch (error: any) {
       console.error('Error uploading file:', error);
-      setUploadError(error.message || 'Error uploading file');
+
+      if (error.message === 'Failed to fetch') {
+        setUploadError('Cannot connect to upload server. Please check:\n1. The webhook URL is correct\n2. The N8N server is running\n3. CORS is enabled on your N8N webhook');
+      } else {
+        setUploadError(error.message || 'Error uploading file');
+      }
     } finally {
       setUploading(false);
     }

@@ -948,6 +948,7 @@ body {
   border-radius: var(--radius);
   margin-bottom: 1rem;
   font-size: 0.875rem;
+  white-space: pre-line;
 }
 
 /* Flex utilities */
