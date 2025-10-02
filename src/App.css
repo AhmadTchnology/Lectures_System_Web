@@ -1652,6 +1652,7 @@ body {
   .lecture-card-footer a.btn-secondary {
     flex: 1 1 100%;
     margin-bottom: 0.5rem;
+    text-decoration:none;
   }
   
   .lecture-tags {
