@@ -721,6 +721,9 @@ function App() {
     setUploadError('');
     setUploadProgress(0);
 
+    const ZIPLINE_URL = 'https://utech-storage.utopiatech.dpdns.org';
+    const API_TOKEN = 'MTc1NzcwNTA2NjI3Nw==.MzA4MDIyNzI4NmMzZTFkMDFiMjRlNjJjZDQxZDAwNDUuYmVjNWMwNDU0NjY1MzI5MGJhNDMxNDhjM2U4NTRjZGJjZTQ3MzYzYzg0YTk5OGJmOTdhNzdiYjAxODM3NGVkZGM4MGU5N2M3MTUzNzY4YmIzMzM3Y2M5Mzc4Nzc5MjU5NTk1ZjQzMGQ1ZDU4NDljYWI3YTU0ZWNkM2Y5ZGFlNWRmM2M4MWUwMTg2ZWVhMDRjYzE4MTMzMjAwNmYzYjA3Yw==';
+
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
@@ -728,11 +731,11 @@ function App() {
       console.log('Uploading file:', selectedFile.name);
       console.log('File size:', selectedFile.size, 'bytes');
 
-      const webhookUrl = '/api/upload';
-      console.log('Webhook URL:', webhookUrl);
-
-      const response = await fetch(webhookUrl, {
+      const response = await fetch(`${ZIPLINE_URL}/api/upload`, {
         method: 'POST',
+        headers: {
+          'Authorization': API_TOKEN,
+        },
         body: formData,
       });
 
@@ -745,20 +748,22 @@ function App() {
         throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
-      console.log('Response data:', data);
+      const result = await response.json();
+      console.log('Response data:', result);
 
-      if (data.url) {
-        setNewLectureUrl(data.url);
+      const uploadedUrl = result.files?.[0] || result.url;
+
+      if (uploadedUrl) {
+        setNewLectureUrl(uploadedUrl);
         setUploadProgress(100);
       } else {
-        throw new Error('No URL returned from upload. Response: ' + JSON.stringify(data));
+        throw new Error('No URL returned from upload. Response: ' + JSON.stringify(result));
       }
     } catch (error: any) {
       console.error('Error uploading file:', error);
 
       if (error.message === 'Failed to fetch') {
-        setUploadError('Cannot connect to upload server. Please check:\n1. The webhook URL is correct\n2. The N8N server is running\n3. CORS is enabled on your N8N webhook');
+        setUploadError('Cannot connect to Zipline server. Please check your internet connection.');
       } else {
         setUploadError(error.message || 'Error uploading file');
       }
