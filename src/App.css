@@ -351,6 +351,7 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
   background-color: var(--primary-dark);
   color: white;
   text-decoration: none;
+  text-color: white !important;
 }
 
 .btn-danger {
