@@ -339,12 +339,11 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
 .btn-secondary:hover {
   background-color: #e5e7eb;
   text-decoration: none;
-  color: white;
 }
 
 [data-theme="dark"] .btn-secondary:hover {
   background-color: var(--primary-dark);
-  color: white;
+  color: var(--text-primary);
   text-decoration: none;
 }
 
@@ -1665,10 +1664,6 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
   .lecture-card-footer a.btn-secondary {
     flex: 1 1 100%;
     margin-bottom: 0.5rem;
-  }
-
-  .lecture-card-footer a.btn-secondary:hover {
-    color: white !important;
   }
   
   .lecture-tags {
