@@ -331,17 +331,20 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
   background: linear-gradient(135deg, var(--vibrant-blue) 0%, var(--primary-light) 100%);
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
+  text-color: white !important;
 }
 
 .btn-secondary {
   background-color: var(--bg-light);
   color: var(--text-primary);
   text-decoration: none;
+  text-color: white !important;
 }
 
 .btn-secondary:hover {
   background-color: #e5e7eb;
   text-decoration: none;
+  text-color: white !important;
 }
 
 [data-theme="dark"] .btn-secondary:hover {
