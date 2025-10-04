@@ -339,11 +339,12 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
 .btn-secondary:hover {
   background-color: #e5e7eb;
   text-decoration: none;
+  color: white;
 }
 
 [data-theme="dark"] .btn-secondary:hover {
   background-color: var(--primary-dark);
-  color: var(--text-primary);
+  color: white;
   text-decoration: none;
 }
 
