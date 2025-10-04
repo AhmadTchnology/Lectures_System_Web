@@ -630,7 +630,7 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
 /* Specific styling for View PDF link in dark mode */
 [data-theme="dark"] a[href$=".pdf"]:hover,
 [data-theme="dark"] a[href*="pdf"]:hover {
-  color: var(--vibrant-blue);
+  color: white;
   text-decoration: underline;
   transform: translateY(-1px);
   transition: all 0.2s ease;
