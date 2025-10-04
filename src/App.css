@@ -303,6 +303,15 @@ body {
   transition: var(--transition);
   border: none;
   gap: 0.5rem;
+  text-decoration: none !important;
+}
+
+a.btn-primary, a.btn-secondary, a.btn-danger {
+  text-decoration: none !important;
+}
+
+a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
+  text-decoration: none !important;
 }
 
 .btn-primary {
