@@ -349,7 +349,7 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
 
 [data-theme="dark"] .btn-secondary:hover {
   background-color: var(--primary-dark);
-  color: var(--text-primary);
+  color: white;
   text-decoration: none;
 }
 
