@@ -324,15 +324,18 @@ body {
 .btn-secondary {
   background-color: var(--bg-light);
   color: var(--text-primary);
+  text-decoration: none;
 }
 
 .btn-secondary:hover {
   background-color: #e5e7eb;
+  text-decoration: none;
 }
 
 [data-theme="dark"] .btn-secondary:hover {
   background-color: var(--primary-dark);
   color: var(--text-primary);
+  text-decoration: none;
 }
 
 .btn-danger {
