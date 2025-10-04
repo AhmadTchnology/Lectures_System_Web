@@ -1666,6 +1666,10 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
     flex: 1 1 100%;
     margin-bottom: 0.5rem;
   }
+
+  .lecture-card-footer a.btn-secondary:hover {
+    color: white !important;
+  }
   
   .lecture-tags {
     margin-top: 0.5rem;
