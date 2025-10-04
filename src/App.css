@@ -308,6 +308,7 @@ body {
 
 a.btn-primary, a.btn-secondary, a.btn-danger {
   text-decoration: none !important;
+  text-color: white;
 }
 
 a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
