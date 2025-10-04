@@ -308,6 +308,7 @@ body {
 
 a.btn-primary, a.btn-secondary, a.btn-danger {
   text-decoration: none !important;
+  text-color: white !important;
 }
 
 a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
@@ -322,6 +323,7 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
 
 .btn-primary:hover {
   background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+  text-color: white !important;
 }
 
 /* Enhanced PDF button hover state in dark mode */
