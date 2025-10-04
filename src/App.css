@@ -312,6 +312,7 @@ a.btn-primary, a.btn-secondary, a.btn-danger {
 
 a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
   text-decoration: none !important;
+  text-color: white !important;
 }
 
 .btn-primary {
