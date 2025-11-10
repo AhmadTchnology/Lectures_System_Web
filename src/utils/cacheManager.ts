@@ -81,20 +81,32 @@ class CacheManager {
       await this.init();
       if (!this.db) return false;
 
+      console.log('📥 Starting cache for:', lecture.title);
+
       // Check if already cached
       const existing = await this.db.get('lectures', lecture.id);
       if (existing?.pdfBlob) {
+        console.log('✅ Already cached:', lecture.title);
         // Update access count
         await this.updateAccessStats(lecture.id);
         return true;
       }
 
-      // Fetch PDF
-      const response = await fetch(lecture.pdfUrl);
-      if (!response.ok) throw new Error('Failed to fetch PDF');
+      console.log('🌐 Fetching PDF from:', lecture.pdfUrl);
+      // Fetch PDF with mode 'cors' to handle cross-origin requests
+      const response = await fetch(lecture.pdfUrl, {
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
+      if (!response.ok) {
+        console.error('❌ Failed to fetch PDF:', response.status, response.statusText);
+        throw new Error(`Failed to fetch PDF: ${response.status}`);
+      }
 
       const pdfBlob = await response.blob();
       const pdfSize = pdfBlob.size;
+      console.log('✅ PDF downloaded:', (pdfSize / 1024 / 1024).toFixed(2), 'MB');
 
       // Check cache size limits
       await this.ensureCacheSpace(pdfSize);
@@ -108,12 +120,14 @@ class CacheManager {
         lastAccessed: Date.now(),
       });
 
+      console.log('✅ Saved to cache:', lecture.title);
+
       // Update metadata
       await this.updateMetadata(pdfSize, 1);
 
       return true;
     } catch (error) {
-      console.error('Error caching lecture:', error);
+      console.error('❌ Error caching lecture:', error);
       return false;
     }
   }
@@ -326,12 +340,18 @@ class CacheManager {
 
   async getOfflinePDFUrl(lectureId: string): Promise<string | null> {
     try {
+      console.log('💾 Retrieving offline PDF:', lectureId);
       const cached = await this.getCachedLecture(lectureId);
-      if (!cached?.pdfBlob) return null;
+      if (!cached?.pdfBlob) {
+        console.log('❌ No cached PDF found for:', lectureId);
+        return null;
+      }
 
-      return URL.createObjectURL(cached.pdfBlob);
+      const url = URL.createObjectURL(cached.pdfBlob);
+      console.log('✅ Created blob URL:', url.substring(0, 50) + '...');
+      return url;
     } catch (error) {
-      console.error('Error creating offline PDF URL:', error);
+      console.error('❌ Error creating offline PDF URL:', error);
       return null;
     }
   }

@@ -1140,8 +1140,34 @@ function App() {
 
   // Handle view PDF (with automatic background caching)
   const handleViewPDF = async (lecture: Lecture) => {
-    // Check if already cached offline
+    console.log('📄 Opening PDF:', lecture.title, { cached: isCached(lecture.id), online: navigator.onLine });
+    
+    // If offline, try to use cached version
+    if (!navigator.onLine) {
+      console.log('📴 Offline mode - checking cache');
+      const offlineUrl = await getOfflinePDFUrl(lecture.id);
+      if (offlineUrl) {
+        console.log('✅ Opening cached PDF');
+        window.open(offlineUrl, '_blank');
+        return;
+      } else {
+        alert('This lecture is not available offline. Please connect to the internet.');
+        return;
+      }
+    }
+    
+    // If online, cache first then open (if student)
+    if (navigator.onLine && currentUser?.role === 'student') {
+      console.log('🌐 Online - caching PDF before opening');
+      // Try to cache immediately (don't wait)
+      cacheLecture(lecture).catch(err => 
+        console.log('⚠️ Caching failed:', err)
+      );
+    }
+    
+    // Check if already cached - use cached version even online for faster loading
     if (isCached(lecture.id)) {
+      console.log('✅ Using cached version');
       const offlineUrl = await getOfflinePDFUrl(lecture.id);
       if (offlineUrl) {
         window.open(offlineUrl, '_blank');
@@ -1150,16 +1176,8 @@ function App() {
     }
     
     // Open online version
+    console.log('🌐 Opening online version');
     window.open(lecture.pdfUrl, '_blank');
-    
-    // Cache in background for next time (only for students)
-    if (currentUser?.role === 'student') {
-      setTimeout(() => {
-        cacheLecture(lecture).catch(err => 
-          console.log('Background caching failed:', err)
-        );
-      }, 1000);
-    }
   };
 
   // Toggle sidebar on mobile
