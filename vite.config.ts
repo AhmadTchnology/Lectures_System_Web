@@ -58,20 +58,21 @@ export default defineConfig({
             }
           },
           {
-            // PDF files from Zipline storage
+            // PDF files from Zipline storage - aggressive caching
             urlPattern: /^https:\/\/utech-storage\.utopiatech\.dpdns\.org\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'pdf-storage-cache',
               expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
               },
               cacheableResponse: {
                 statuses: [0, 200]
               },
-              matchOptions: {
-                ignoreVary: true
+              fetchOptions: {
+                mode: 'cors',
+                credentials: 'omit'
               }
             }
           },

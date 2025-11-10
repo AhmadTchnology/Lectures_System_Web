@@ -111,12 +111,8 @@ interface EditUserState {
 }
 
 function App() {
-  // Cache management hook (background only)
-  const {
-    cacheLecture,
-    isCached,
-    getOfflinePDFUrl,
-  } = useLectureCache();
+  // Cache management hook (not used directly, Service Worker handles caching)
+  // const { cacheLecture, isCached, getOfflinePDFUrl } = useLectureCache();
   
   // State for authentication
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -1140,43 +1136,22 @@ function App() {
 
   // Handle view PDF (with automatic background caching)
   const handleViewPDF = async (lecture: Lecture) => {
-    console.log('📄 Opening PDF:', lecture.title, { cached: isCached(lecture.id), online: navigator.onLine });
-    
-    // If offline, try to use cached version
+    // If offline, check if Service Worker has it cached
     if (!navigator.onLine) {
-      console.log('📴 Offline mode - checking cache');
-      const offlineUrl = await getOfflinePDFUrl(lecture.id);
-      if (offlineUrl) {
-        console.log('✅ Opening cached PDF');
-        window.open(offlineUrl, '_blank');
-        return;
-      } else {
+      // Try to fetch from cache via Service Worker
+      try {
+        const response = await fetch(lecture.pdfUrl);
+        if (response.ok) {
+          window.open(lecture.pdfUrl, '_blank');
+          return;
+        }
+      } catch (error) {
         alert('This lecture is not available offline. Please connect to the internet.');
         return;
       }
     }
     
-    // If online, cache first then open (if student)
-    if (navigator.onLine && currentUser?.role === 'student') {
-      console.log('🌐 Online - caching PDF before opening');
-      // Try to cache immediately (don't wait)
-      cacheLecture(lecture).catch(err => 
-        console.log('⚠️ Caching failed:', err)
-      );
-    }
-    
-    // Check if already cached - use cached version even online for faster loading
-    if (isCached(lecture.id)) {
-      console.log('✅ Using cached version');
-      const offlineUrl = await getOfflinePDFUrl(lecture.id);
-      if (offlineUrl) {
-        window.open(offlineUrl, '_blank');
-        return;
-      }
-    }
-    
-    // Open online version
-    console.log('🌐 Opening online version');
+    // Open the PDF (Service Worker will cache it automatically)
     window.open(lecture.pdfUrl, '_blank');
   };
 
