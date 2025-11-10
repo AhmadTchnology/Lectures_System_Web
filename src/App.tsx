@@ -1,3 +1,19 @@
+/**
+ * Lecture Management System - Offline-Capable PWA
+ * 
+ * OFFLINE FEATURES:
+ * - Service Worker caches app assets for offline access
+ * - LocalStorage caches lectures, categories, and user sessions
+ * - IndexedDB stores PDF files for offline viewing
+ * - Works on mobile browsers (Chrome, Safari, Firefox)
+ * 
+ * To use offline on mobile:
+ * 1. Visit the site while online
+ * 2. Login and browse lectures (they auto-cache)
+ * 3. Go offline - cached data remains available
+ * 4. PDFs viewed once are cached for offline access
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { LogIn, LogOut, Upload, FileText, Users, User, Info, Menu, X, Search, Filter, Lock, Plus, Trash, Heart, HeartOff, CheckCircle, UserX } from 'lucide-react';
 import classNames from 'classnames';
