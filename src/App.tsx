@@ -3,6 +3,9 @@ import { LogIn, LogOut, Upload, FileText, Users, User, Info, Menu, X, Search, Fi
 import classNames from 'classnames';
 import './App.css';
 import ThemeToggle from './components/ThemeToggle.jsx';
+import { useLectureCache } from './hooks/useLectureCache';
+import { OfflineAuthManager } from './utils/offlineAuth';
+import { OfflineDataCache } from './utils/offlineDataCache';
 
 // Firebase imports
 import { 
@@ -92,6 +95,13 @@ interface EditUserState {
 }
 
 function App() {
+  // Cache management hook (background only)
+  const {
+    cacheLecture,
+    isCached,
+    getOfflinePDFUrl,
+  } = useLectureCache();
+  
   // State for authentication
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -192,9 +202,61 @@ function App() {
     }
   };
 
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('🌐 Browser went online');
+    };
+    const handleOffline = () => {
+      console.log('📴 Browser went offline');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Check for cached session on mount (before Firebase auth)
+  useEffect(() => {
+    console.log('🔄 Initial auth check - Online status:', navigator.onLine);
+    const cachedUser = OfflineAuthManager.getCachedSession();
+    if (cachedUser) {
+      console.log('✅ Found cached session on mount');
+      setCurrentUser(cachedUser as User);
+      setIsAuthenticated(true);
+      
+      if (cachedUser.role === 'admin') {
+        setActiveView('users');
+      } else {
+        setActiveView('lectures');
+      }
+      
+      // Still let Firebase auth check happen, but we're already logged in
+      setAuthLoading(false);
+    }
+  }, []);
+
   // Modify auth state listener to check for force sign out
   useEffect(() => {
+    // If we're offline and have a cached session, don't run Firebase auth listener
+    const cachedUser = OfflineAuthManager.getCachedSession();
+    if (!navigator.onLine && cachedUser) {
+      console.log('📱 Offline with cached session - skipping Firebase auth listener');
+      // We're already logged in with cached session
+      setAuthLoading(false);
+      return; // Don't subscribe to Firebase auth
+    }
+    
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('🔐 Firebase auth state changed:', { 
+        hasUser: !!user, 
+        online: navigator.onLine,
+        cachedSession: !!OfflineAuthManager.getCachedSession()
+      });
       if (user) {
         try {
           // Get user data from Firestore
@@ -212,6 +274,7 @@ function App() {
             
             if (lastSignOut > lastSignIn) {
               await signOut(auth);
+              OfflineAuthManager.clearSession();
               setIsAuthenticated(false);
               setCurrentUser(null);
               setActiveView('login');
@@ -242,6 +305,9 @@ function App() {
             setCurrentUser(userData);
             setIsAuthenticated(true);
             
+            // Save session for offline access
+            OfflineAuthManager.saveSession(userData);
+            
             // Set appropriate view based on user role
             if (userData.role === 'admin') {
               setActiveView('users');
@@ -251,14 +317,48 @@ function App() {
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
-          await signOut(auth);
-          setIsAuthenticated(false);
-          setCurrentUser(null);
+          
+          // Try to use cached session if offline
+          const cachedUser = OfflineAuthManager.getCachedSession();
+          if (cachedUser) {
+            console.log('Using cached session (offline mode - error handler)');
+            setCurrentUser(cachedUser as User);
+            setIsAuthenticated(true);
+            
+            if (cachedUser.role === 'admin') {
+              setActiveView('users');
+            } else {
+              setActiveView('lectures');
+            }
+          } else {
+            // Only clear session if online (error is real)
+            if (navigator.onLine) {
+              await signOut(auth);
+              OfflineAuthManager.clearSession();
+            }
+            setIsAuthenticated(false);
+            setCurrentUser(null);
+          }
         }
       } else {
-        setIsAuthenticated(false);
-        setCurrentUser(null);
-        setActiveView('login');
+        // No Firebase user - check for cached session
+        const cachedUser = OfflineAuthManager.getCachedSession();
+        if (cachedUser) {
+          console.log('No Firebase auth, using cached session');
+          setCurrentUser(cachedUser as User);
+          setIsAuthenticated(true);
+          
+          if (cachedUser.role === 'admin') {
+            setActiveView('users');
+          } else {
+            setActiveView('lectures');
+          }
+        } else {
+          // Only logout if we don't have a cached session
+          setIsAuthenticated(false);
+          setCurrentUser(null);
+          setActiveView('login');
+        }
       }
       
       setAuthLoading(false);
@@ -269,97 +369,192 @@ function App() {
 
   // Subscribe to categories collection
   useEffect(() => {
-    if (isAuthenticated) {
+    console.log('🔄 Categories effect triggered:', { isAuthenticated, isOnline: navigator.onLine });
+    
+    // Always load cached categories first for immediate UI
+    const cachedCategories = OfflineDataCache.getCachedCategories();
+    if (cachedCategories) {
+      console.log('📦 Loading cached categories for immediate display');
+      setCategories(cachedCategories);
+    }
+    
+    // Only fetch fresh data if online AND authenticated
+    if (isAuthenticated && navigator.onLine) {
+      console.log('📡 Fetching fresh categories from Firebase');
       const categoriesQuery = query(
         collection(db, 'categories'),
         orderBy('createdAt', 'desc')
       );
       
-      const unsubscribe = onSnapshot(categoriesQuery, (snapshot) => {
-        const categoriesList = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Category[];
-        
-        setCategories(categoriesList);
-      });
+      const unsubscribe = onSnapshot(
+        categoriesQuery,
+        (snapshot) => {
+          const categoriesList = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Category[];
+          
+          // Only update state and cache if we got actual data
+          if (categoriesList.length > 0) {
+            setCategories(categoriesList);
+            // Cache for offline use
+            OfflineDataCache.saveCategories(categoriesList);
+            console.log('✅ Categories updated from Firebase:', categoriesList.length, 'items');
+          } else {
+            console.log('⚠️ Received empty categories from Firebase - keeping cached data');
+          }
+        },
+        (error) => {
+          console.error('⚠️ Error fetching categories from Firebase:', error);
+          // Keep using cached data
+        }
+      );
       
       return () => unsubscribe();
+    } else if (isAuthenticated && !navigator.onLine) {
+      console.log('📱 Offline mode: Using cached categories only');
+    } else {
+      console.log('⏭️ Skipping Firebase fetch:', { 
+        hasAuth: !!isAuthenticated, 
+        isOnline: navigator.onLine,
+        shouldFetch: isAuthenticated && navigator.onLine 
+      });
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigator.onLine]);
   
   // Subscribe to users collection
   useEffect(() => {
+    // Admins need users list - load cached if available
     if (isAuthenticated && currentUser?.role === 'admin') {
-      const usersQuery = query(
-        collection(db, 'users'),
-        orderBy('createdAt', 'desc')
-      );
-      
-      const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
-        const usersList = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as User[];
+      if (navigator.onLine) {
+        console.log('📡 Fetching users from Firebase');
+        const usersQuery = query(
+          collection(db, 'users'),
+          orderBy('createdAt', 'desc')
+        );
         
-        setUsers(usersList);
-      });
-      
-      return () => unsubscribe();
+        const unsubscribe = onSnapshot(
+          usersQuery,
+          (snapshot) => {
+            const usersList = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as User[];
+            
+            setUsers(usersList);
+            console.log('✅ Users updated from Firebase:', usersList.length, 'users');
+          },
+          (error) => {
+            console.error('⚠️ Error fetching users from Firebase:', error);
+          }
+        );
+        
+        return () => unsubscribe();
+      } else {
+        console.log('📱 Offline mode: Admin users list not available');
+      }
     }
   }, [isAuthenticated, currentUser]);
   
   // Subscribe to announcements collection
   useEffect(() => {
+    // Always load cached announcements if we had them (future implementation)
     if (isAuthenticated) {
-      const announcementsQuery = query(
-        collection(db, 'announcements'),
-        orderBy('createdAt', 'desc')
-      );
-      
-      const unsubscribe = onSnapshot(announcementsQuery, (snapshot) => {
-        const announcementsList = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Announcement[];
+      if (navigator.onLine) {
+        console.log('📡 Fetching announcements from Firebase');
+        const announcementsQuery = query(
+          collection(db, 'announcements'),
+          orderBy('createdAt', 'desc')
+        );
         
-        setAnnouncements(announcementsList);
+        const unsubscribe = onSnapshot(
+          announcementsQuery,
+          (snapshot) => {
+            const announcementsList = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as Announcement[];
+            
+            setAnnouncements(announcementsList);
+            
+            // Calculate unread announcements
+            if (currentUser) {
+              const unreadAnnouncements = currentUser.unreadAnnouncements || [];
+              const count = announcementsList.filter(announcement => 
+                !unreadAnnouncements.includes(announcement.id)
+              ).length;
+              setUnreadCount(count);
+            }
+            console.log('✅ Announcements updated from Firebase:', announcementsList.length, 'items');
+          },
+          (error) => {
+            console.error('⚠️ Error fetching announcements from Firebase:', error);
+          }
+        );
         
-        // Calculate unread announcements
-        if (currentUser) {
-          const unreadAnnouncements = currentUser.unreadAnnouncements || [];
-          const count = announcementsList.filter(announcement => 
-            !unreadAnnouncements.includes(announcement.id)
-          ).length;
-          setUnreadCount(count);
-        }
-      });
-      
-      return () => unsubscribe();
+        return () => unsubscribe();
+      } else {
+        console.log('📱 Offline mode: Using cached announcements only');
+      }
     }
   }, [isAuthenticated, currentUser]);
   
   // Subscribe to lectures collection
   useEffect(() => {
-    if (isAuthenticated) {
+    console.log('🔄 Lectures effect triggered:', { isAuthenticated, isOnline: navigator.onLine });
+    
+    // Always load cached lectures first for immediate UI
+    const cachedLectures = OfflineDataCache.getCachedLectures();
+    if (cachedLectures) {
+      console.log('📦 Loading cached lectures for immediate display');
+      setLectures(cachedLectures);
+      setFilteredLectures(cachedLectures);
+    }
+    
+    // Only fetch fresh data if online AND authenticated
+    if (isAuthenticated && navigator.onLine) {
+      console.log('📡 Fetching fresh lectures from Firebase');
       const lecturesQuery = query(
         collection(db, 'lectures'),
         orderBy('uploadDate', 'desc')
       );
       
-      const unsubscribe = onSnapshot(lecturesQuery, (snapshot) => {
-        const lecturesList = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Lecture[];
-        
-        setLectures(lecturesList);
-        setFilteredLectures(lecturesList);
-      });
+      const unsubscribe = onSnapshot(
+        lecturesQuery,
+        (snapshot) => {
+          const lecturesList = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Lecture[];
+          
+          // Only update state and cache if we got actual data
+          if (lecturesList.length > 0) {
+            setLectures(lecturesList);
+            setFilteredLectures(lecturesList);
+            // Cache for offline use
+            OfflineDataCache.saveLectures(lecturesList);
+            console.log('✅ Lectures updated from Firebase:', lecturesList.length, 'items');
+          } else {
+            console.log('⚠️ Received empty lectures from Firebase - keeping cached data');
+          }
+        },
+        (error) => {
+          console.error('⚠️ Error fetching lectures from Firebase:', error);
+          // Keep using cached data
+        }
+      );
       
       return () => unsubscribe();
+    } else if (isAuthenticated && !navigator.onLine) {
+      console.log('📱 Offline mode: Using cached lectures only');
+    } else {
+      console.log('⏭️ Skipping Firebase fetch:', { 
+        hasAuth: !!isAuthenticated, 
+        isOnline: navigator.onLine,
+        shouldFetch: isAuthenticated && navigator.onLine 
+      });
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigator.onLine]);
 
   // Filter lectures when search term or filter category changes
   useEffect(() => {
@@ -463,6 +658,8 @@ function App() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      OfflineAuthManager.clearSession();
+      OfflineDataCache.clearAll();
       // Auth state listener will handle the rest
     } catch (error) {
       console.error('Logout error:', error);
@@ -864,16 +1061,23 @@ function App() {
       };
       setCurrentUser(updatedUser);
 
-      // Update Firestore
-      await updateDoc(userRef, {
-        favorites: updatedUser.favorites
-      });
+      // Update cached session
+      OfflineAuthManager.updateCachedUser({ favorites: updatedUser.favorites });
+
+      // Update Firestore (will fail silently if offline)
+      if (navigator.onLine) {
+        await updateDoc(userRef, {
+          favorites: updatedUser.favorites
+        });
+      }
     } catch (error) {
       console.error('Error toggling favorite:', error);
       // Revert local state if the update fails
-      const userDoc = await getDoc(doc(db, 'users', currentUser.id));
-      const userData = userDoc.data();
-      setCurrentUser(prev => ({ ...prev!, favorites: userData?.favorites || [] }));
+      if (navigator.onLine) {
+        const userDoc = await getDoc(doc(db, 'users', currentUser.id));
+        const userData = userDoc.data();
+        setCurrentUser(prev => ({ ...prev!, favorites: userData?.favorites || [] }));
+      }
     }
   };
 
@@ -898,16 +1102,47 @@ function App() {
       };
       setCurrentUser(updatedUser);
 
-      // Update Firestore
-      await updateDoc(userRef, {
-        completedLectures: updatedUser.completedLectures
-      });
+      // Update cached session
+      OfflineAuthManager.updateCachedUser({ completedLectures: updatedUser.completedLectures });
+
+      // Update Firestore (will fail silently if offline)
+      if (navigator.onLine) {
+        await updateDoc(userRef, {
+          completedLectures: updatedUser.completedLectures
+        });
+      }
     } catch (error) {
       console.error('Error toggling lecture completion:', error);
       // Revert local state if the update fails
-      const userDoc = await getDoc(doc(db, 'users', currentUser.id));
-      const userData = userDoc.data();
-      setCurrentUser(prev => ({ ...prev!, completedLectures: userData?.completedLectures || [] }));
+      if (navigator.onLine) {
+        const userDoc = await getDoc(doc(db, 'users', currentUser.id));
+        const userData = userDoc.data();
+        setCurrentUser(prev => ({ ...prev!, completedLectures: userData?.completedLectures || [] }));
+      }
+    }
+  };
+
+  // Handle view PDF (with automatic background caching)
+  const handleViewPDF = async (lecture: Lecture) => {
+    // Check if already cached offline
+    if (isCached(lecture.id)) {
+      const offlineUrl = await getOfflinePDFUrl(lecture.id);
+      if (offlineUrl) {
+        window.open(offlineUrl, '_blank');
+        return;
+      }
+    }
+    
+    // Open online version
+    window.open(lecture.pdfUrl, '_blank');
+    
+    // Cache in background for next time (only for students)
+    if (currentUser?.role === 'student') {
+      setTimeout(() => {
+        cacheLecture(lecture).catch(err => 
+          console.log('Background caching failed:', err)
+        );
+      }, 1000);
     }
   };
 
@@ -921,7 +1156,12 @@ function App() {
   const stages = categories.filter(cat => cat.type === 'stage');
 
   // Render login form
-  const renderLoginForm = () => (
+  const renderLoginForm = () => {
+    const sessionInfo = OfflineAuthManager.getSessionInfo();
+    const hasOfflineSession = sessionInfo.hasCache;
+    const isOffline = !sessionInfo.isOnline;
+    
+    return (
     <div className="auth-container">
       <div className="auth-form">
         <div className="auth-logo">
@@ -931,6 +1171,20 @@ function App() {
         </div>
         <h2>Lecture Management System</h2>
         <p>{isSignup ? 'Create your account' : 'Login to your account'}</p>
+        
+        {/* Offline mode indicator */}
+        {isOffline && (
+          <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 mb-4">
+            <p className="text-orange-800 dark:text-orange-300 text-sm">
+              ⚠️ You are currently offline.
+              {hasOfflineSession ? (
+                <span className="block mt-1">Your previous session is still active. Please wait while we restore it...</span>
+              ) : (
+                <span className="block mt-1">Please connect to the internet to sign in.</span>
+              )}
+            </p>
+          </div>
+        )}
         
         {isSignup ? (
           <form onSubmit={handleSignup}>
@@ -1079,6 +1333,7 @@ function App() {
       </div>
     </div>
   );
+  };
 
   // Render user management (admin only)
   const renderUserManagement = () => (
@@ -1581,14 +1836,12 @@ function App() {
                   </div>
                   <div className="lecture-card-footer">
                     <div className="flex gap-2">
-                      <a
-                        href={lecture.pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={() => handleViewPDF(lecture)}
                         className="btn-secondary flex-1"
                       >
-                        View PDF
-                      </a>
+                        <FileText size={18} /> View PDF
+                      </button>
                       {currentUser?.role === 'student' && (
                         <>
                           <button
