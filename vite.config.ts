@@ -7,27 +7,47 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['vite.svg'],
       manifest: {
         name: 'Lecture Management System',
         short_name: 'LMS',
-        description: 'Offline-capable Lecture Management System',
+        description: 'Offline-capable Lecture Management System for University',
         theme_color: '#1e40af',
         background_color: '#ffffff',
         display: 'standalone',
+        orientation: 'portrait',
+        scope: '/',
         start_url: '/',
         icons: [
           {
             src: '/vite.svg',
             sizes: '192x192',
             type: 'image/svg+xml',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: '/vite.svg',
+            sizes: '512x512',
+            type: 'image/svg+xml',
+            purpose: 'maskable'
+          }
+        ],
+        categories: ['education', 'productivity'],
+        screenshots: [],
+        shortcuts: [
+          {
+            name: 'View Lectures',
+            short_name: 'Lectures',
+            description: 'Browse available lectures',
+            url: '/?view=lectures',
+            icons: [{ src: '/vite.svg', sizes: '192x192' }]
           }
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,eot}'],
+        maximumFileSizeToCacheInBytes: 5000000,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -36,7 +56,7 @@ export default defineConfig({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -50,7 +70,7 @@ export default defineConfig({
               cacheName: 'gstatic-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -58,14 +78,13 @@ export default defineConfig({
             }
           },
           {
-            // PDF files from Zipline storage - aggressive caching
             urlPattern: /^https:\/\/utech-storage\.utopiatech\.dpdns\.org\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'pdf-storage-cache',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -77,7 +96,6 @@ export default defineConfig({
             }
           },
           {
-            // Firebase and Firestore
             urlPattern: /^https:\/\/.*\.googleapis\.com\/.*/i,
             handler: 'NetworkFirst',
             options: {
@@ -85,17 +103,31 @@ export default defineConfig({
               networkTimeoutSeconds: 10,
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 1 week
+                maxAgeSeconds: 60 * 60 * 24 * 7
               },
               cacheableResponse: {
                 statuses: [0, 200]
               }
             }
+          },
+          {
+            urlPattern: /^https:\/\/.*\.firebaseio\.com\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'firebase-data-cache',
+              networkTimeoutSeconds: 10,
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 7
+              }
+            }
           }
-        ]
+        ],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/]
       },
       devOptions: {
-        enabled: false // Disable in development to avoid conflicts
+        enabled: false
       }
     })
   ],
