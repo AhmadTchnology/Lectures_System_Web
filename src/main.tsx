@@ -6,10 +6,11 @@ import './utils/themeInit';
 import { registerSW } from 'virtual:pwa-register';
 
 const updateSW = registerSW({
+  immediate: true,
   onNeedRefresh() {
-    if (confirm('New content available. Reload to update?')) {
-      updateSW(true);
-    }
+    // Auto-reload on update instead of prompting
+    console.log('🔄 New version available, updating...');
+    updateSW(true);
   },
   onOfflineReady() {
     const notification = document.createElement('div');
