@@ -94,28 +94,30 @@ const ColorCustomization: React.FC<ColorCustomizationProps> = ({ currentTheme })
 
   return (
     <div className="content-container">
-      <div className="flex justify-between items-center mb-4">
-        <div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+        <div className="w-full sm:w-auto">
           <h2 className="section-title">Color Customization</h2>
-          <p className="text-secondary" style={{ marginTop: '-0.5rem', marginBottom: '1rem' }}>
+          <p className="text-secondary" style={{ marginTop: '-0.5rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
             Customize colors for <strong>{currentTheme} mode</strong>. Changes are saved locally and work offline.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <button 
             onClick={handleReset}
-            className="btn-secondary flex items-center gap-2"
+            className="btn-secondary flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <RotateCcw size={18} />
-            Reset to Defaults
+            <span className="hidden sm:inline">Reset to Defaults</span>
+            <span className="sm:hidden">Reset</span>
           </button>
           <button 
             onClick={handleSave}
-            className="btn-primary flex items-center gap-2"
+            className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto"
             disabled={isSaving}
           >
             <Save size={18} />
-            Save Changes
+            <span className="hidden sm:inline">Save Changes</span>
+            <span className="sm:hidden">Save</span>
           </button>
         </div>
       </div>
