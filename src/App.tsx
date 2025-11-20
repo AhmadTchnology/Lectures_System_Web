@@ -15,13 +15,15 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { LogIn, LogOut, Upload, FileText, Users, User, Info, Menu, X, Search, Filter, Lock, Plus, Trash, Heart, HeartOff, CheckCircle, UserX } from 'lucide-react';
+import { LogIn, LogOut, Upload, FileText, Users, User, Info, Menu, X, Search, Filter, Lock, Plus, Trash, Heart, HeartOff, CheckCircle, UserX, Palette } from 'lucide-react';
 import classNames from 'classnames';
 import './App.css';
 import ThemeToggle from './components/ThemeToggle.jsx';
+import ColorCustomization from './components/ColorCustomization';
 import { useLectureCache } from './hooks/useLectureCache';
 import { OfflineAuthManager } from './utils/offlineAuth';
 import { OfflineDataCache } from './utils/offlineDataCache';
+import { ColorSettingsManager } from './utils/colorSettings';
 
 // Firebase imports
 import { 
@@ -134,6 +136,9 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showFavorites, setShowFavorites] = useState<boolean>(false);
+  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>(() => {
+    return (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'light';
+  });
   
   // Form states
   const [loginEmail, setLoginEmail] = useState<string>('');
@@ -180,6 +185,33 @@ function App() {
   
   // Refs
   const sidebarRef = useRef<HTMLDivElement>(null);
+
+  // Initialize color settings on mount
+  useEffect(() => {
+    ColorSettingsManager.initialize();
+  }, []);
+
+  // Listen for theme changes and update color settings
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'data-theme') {
+          const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark';
+          if (newTheme) {
+            setCurrentTheme(newTheme);
+            ColorSettingsManager.onThemeChange(newTheme);
+          }
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Add force sign out function
   const handleForceSignOut = async () => {
@@ -2261,6 +2293,18 @@ function App() {
               </button>
             </li>
             
+            <li>
+              <button
+                className={activeView === 'customize' ? 'active' : ''}
+                onClick={() => {
+                  setActiveView('customize');
+                  setIsSidebarOpen(false);
+                }}
+              >
+                <Palette size={20} /> Customize Colors
+              </button>
+            </li>
+            
             <li className="nav-footer">
               <button 
                 onClick={handleLogout} 
@@ -2300,6 +2344,7 @@ function App() {
             {activeView === 'lectures' && renderLecturesList()}
             {activeView === 'announcements' && renderAnnouncements()}
             {activeView === 'about' && renderAboutUs()}
+            {activeView === 'customize' && <ColorCustomization currentTheme={currentTheme} />}
           </main>
         </div>
       )}

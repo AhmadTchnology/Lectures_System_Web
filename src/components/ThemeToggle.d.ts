@@ -1,7 +1,5 @@
-declare module '../components/ThemeToggle.jsx' {
-  import React from 'react';
-  
-  const ThemeToggle: React.FC;
-  
-  export default ThemeToggle;
-}
+import React from 'react';
+
+declare const ThemeToggle: React.FC;
+
+export default ThemeToggle;
