@@ -26,12 +26,12 @@ import { OfflineDataCache } from './utils/offlineDataCache';
 import { ColorSettingsManager } from './utils/colorSettings';
 
 // Firebase imports
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  deleteDoc, 
-  doc, 
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
   serverTimestamp,
   query,
   orderBy,
@@ -42,12 +42,12 @@ import {
   getDoc,
   writeBatch
 } from 'firebase/firestore';
-import { 
-  ref, 
-  getDownloadURL, 
-  deleteObject 
+import {
+  ref,
+  getDownloadURL,
+  deleteObject
 } from 'firebase/storage';
-import { 
+import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
@@ -115,13 +115,13 @@ interface EditUserState {
 function App() {
   // Cache management hook (not used directly, Service Worker handles caching)
   // const { cacheLecture, isCached, getOfflinePDFUrl } = useLectureCache();
-  
+
   // State for authentication
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
   const [isSignup, setIsSignup] = useState<boolean>(false);
-  
+
   // State for users and lectures
   const [users, setUsers] = useState<User[]>([]);
   const [lectures, setLectures] = useState<Lecture[]>([]);
@@ -130,7 +130,7 @@ function App() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [showNotifications, setShowNotifications] = useState<boolean>(false);
   const [unreadCount, setUnreadCount] = useState<number>(0);
-  
+
   // UI states
   const [activeView, setActiveView] = useState<string>('login');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
@@ -139,7 +139,7 @@ function App() {
   const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>(() => {
     return (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'light';
   });
-  
+
   // Form states
   const [loginEmail, setLoginEmail] = useState<string>('');
   const [loginPassword, setLoginPassword] = useState<string>('');
@@ -162,18 +162,18 @@ function App() {
   const [newCategoryType, setNewCategoryType] = useState<'subject' | 'stage'>('subject');
   const [loginError, setLoginError] = useState<string>('');
   const [signupError, setSignupError] = useState<string>('');
-  
+
   // Announcement form states
   const [newAnnouncementTitle, setNewAnnouncementTitle] = useState<string>('');
   const [newAnnouncementContent, setNewAnnouncementContent] = useState<string>('');
   const [newAnnouncementType, setNewAnnouncementType] = useState<'homework' | 'exam' | 'event' | 'other'>('homework');
   const [newAnnouncementExpiryDate, setNewAnnouncementExpiryDate] = useState<string>('');
-  
+
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterSubject, setFilterSubject] = useState<string>('all');
   const [filterStage, setFilterStage] = useState<string>('all');
-  
+
   // Add state for edit modal
   const [editUser, setEditUser] = useState<EditUserState>({
     id: '',
@@ -182,7 +182,7 @@ function App() {
     role: 'student',
     isOpen: false
   });
-  
+
   // Refs
   const sidebarRef = useRef<HTMLDivElement>(null);
 
@@ -216,26 +216,26 @@ function App() {
   // Add force sign out function
   const handleForceSignOut = async () => {
     if (currentUser?.role !== 'admin') return;
-    
+
     if (!confirm('Are you sure you want to force all users to sign out?')) {
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
       const batch = writeBatch(db);
-      
+
       // Get all users
       const usersSnapshot = await getDocs(collection(db, 'users'));
       const forceSignOutTime = Date.now();
-      
+
       usersSnapshot.docs.forEach((userDoc) => {
         batch.update(doc(db, 'users', userDoc.id), {
           lastSignOut: forceSignOutTime
         });
       });
-      
+
       await batch.commit();
       alert('All users have been signed out successfully');
     } catch (error) {
@@ -272,13 +272,13 @@ function App() {
       console.log('✅ Found cached session on mount');
       setCurrentUser(cachedUser as User);
       setIsAuthenticated(true);
-      
+
       if (cachedUser.role === 'admin') {
         setActiveView('users');
       } else {
         setActiveView('lectures');
       }
-      
+
       // Still let Firebase auth check happen, but we're already logged in
       setAuthLoading(false);
     }
@@ -294,10 +294,10 @@ function App() {
       setAuthLoading(false);
       return; // Don't subscribe to Firebase auth
     }
-    
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('🔐 Firebase auth state changed:', { 
-        hasUser: !!user, 
+      console.log('🔐 Firebase auth state changed:', {
+        hasUser: !!user,
         online: navigator.onLine,
         cachedSession: !!OfflineAuthManager.getCachedSession()
       });
@@ -307,15 +307,15 @@ function App() {
           const userDoc = await getDocs(
             query(collection(db, 'users'), where('email', '==', user.email))
           );
-          
+
           if (!userDoc.empty) {
             const userData = userDoc.docs[0].data() as User;
             userData.id = userDoc.docs[0].id;
-            
+
             // Check if user was force signed out
             const lastSignOut = userData.lastSignOut || 0;
             const lastSignIn = user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).getTime() : Infinity;
-            
+
             if (lastSignOut > lastSignIn) {
               await signOut(auth);
               OfflineAuthManager.clearSession();
@@ -325,11 +325,11 @@ function App() {
               alert('You have been signed out by an administrator. Please sign in again.');
               return;
             }
-            
+
             // Initialize missing fields if they don't exist
             const userRef = doc(db, 'users', userData.id);
             const updates: Partial<User> = {};
-            
+
             if (!userData.favorites) {
               updates.favorites = [];
             }
@@ -339,19 +339,19 @@ function App() {
             if (!userData.unreadAnnouncements) {
               updates.unreadAnnouncements = [];
             }
-            
+
             // Only update if there are missing fields
             if (Object.keys(updates).length > 0) {
               await updateDoc(userRef, updates);
               Object.assign(userData, updates);
             }
-            
+
             setCurrentUser(userData);
             setIsAuthenticated(true);
-            
+
             // Save session for offline access
             OfflineAuthManager.saveSession(userData);
-            
+
             // Set appropriate view based on user role
             if (userData.role === 'admin') {
               setActiveView('users');
@@ -361,14 +361,14 @@ function App() {
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
-          
+
           // Try to use cached session if offline
           const cachedUser = OfflineAuthManager.getCachedSession();
           if (cachedUser) {
             console.log('Using cached session (offline mode - error handler)');
             setCurrentUser(cachedUser as User);
             setIsAuthenticated(true);
-            
+
             if (cachedUser.role === 'admin') {
               setActiveView('users');
             } else {
@@ -391,7 +391,7 @@ function App() {
           console.log('No Firebase auth, using cached session');
           setCurrentUser(cachedUser as User);
           setIsAuthenticated(true);
-          
+
           if (cachedUser.role === 'admin') {
             setActiveView('users');
           } else {
@@ -404,24 +404,24 @@ function App() {
           setActiveView('login');
         }
       }
-      
+
       setAuthLoading(false);
     });
-    
+
     return () => unsubscribe();
   }, []);
 
   // Subscribe to categories collection
   useEffect(() => {
     console.log('🔄 Categories effect triggered:', { isAuthenticated, isOnline: navigator.onLine });
-    
+
     // Always load cached categories first for immediate UI
     const cachedCategories = OfflineDataCache.getCachedCategories();
     if (cachedCategories) {
       console.log('📦 Loading cached categories for immediate display');
       setCategories(cachedCategories);
     }
-    
+
     // Only fetch fresh data if online AND authenticated
     if (isAuthenticated && navigator.onLine) {
       console.log('📡 Fetching fresh categories from Firebase');
@@ -429,7 +429,7 @@ function App() {
         collection(db, 'categories'),
         orderBy('createdAt', 'desc')
       );
-      
+
       const unsubscribe = onSnapshot(
         categoriesQuery,
         (snapshot) => {
@@ -437,7 +437,7 @@ function App() {
             id: doc.id,
             ...doc.data()
           })) as Category[];
-          
+
           // Only update state and cache if we got actual data
           if (categoriesList.length > 0) {
             setCategories(categoriesList);
@@ -453,19 +453,19 @@ function App() {
           // Keep using cached data
         }
       );
-      
+
       return () => unsubscribe();
     } else if (isAuthenticated && !navigator.onLine) {
       console.log('📱 Offline mode: Using cached categories only');
     } else {
-      console.log('⏭️ Skipping Firebase fetch:', { 
-        hasAuth: !!isAuthenticated, 
+      console.log('⏭️ Skipping Firebase fetch:', {
+        hasAuth: !!isAuthenticated,
         isOnline: navigator.onLine,
-        shouldFetch: isAuthenticated && navigator.onLine 
+        shouldFetch: isAuthenticated && navigator.onLine
       });
     }
   }, [isAuthenticated, navigator.onLine]);
-  
+
   // Subscribe to users collection
   useEffect(() => {
     // Admins need users list - load cached if available
@@ -476,7 +476,7 @@ function App() {
           collection(db, 'users'),
           orderBy('createdAt', 'desc')
         );
-        
+
         const unsubscribe = onSnapshot(
           usersQuery,
           (snapshot) => {
@@ -484,7 +484,7 @@ function App() {
               id: doc.id,
               ...doc.data()
             })) as User[];
-            
+
             setUsers(usersList);
             console.log('✅ Users updated from Firebase:', usersList.length, 'users');
           },
@@ -492,14 +492,14 @@ function App() {
             console.error('⚠️ Error fetching users from Firebase:', error);
           }
         );
-        
+
         return () => unsubscribe();
       } else {
         console.log('📱 Offline mode: Admin users list not available');
       }
     }
   }, [isAuthenticated, currentUser]);
-  
+
   // Subscribe to announcements collection
   useEffect(() => {
     // Always load cached announcements if we had them (future implementation)
@@ -510,7 +510,7 @@ function App() {
           collection(db, 'announcements'),
           orderBy('createdAt', 'desc')
         );
-        
+
         const unsubscribe = onSnapshot(
           announcementsQuery,
           (snapshot) => {
@@ -518,13 +518,13 @@ function App() {
               id: doc.id,
               ...doc.data()
             })) as Announcement[];
-            
+
             setAnnouncements(announcementsList);
-            
+
             // Calculate unread announcements
             if (currentUser) {
               const unreadAnnouncements = currentUser.unreadAnnouncements || [];
-              const count = announcementsList.filter(announcement => 
+              const count = announcementsList.filter(announcement =>
                 !unreadAnnouncements.includes(announcement.id)
               ).length;
               setUnreadCount(count);
@@ -535,18 +535,18 @@ function App() {
             console.error('⚠️ Error fetching announcements from Firebase:', error);
           }
         );
-        
+
         return () => unsubscribe();
       } else {
         console.log('📱 Offline mode: Using cached announcements only');
       }
     }
   }, [isAuthenticated, currentUser]);
-  
+
   // Subscribe to lectures collection
   useEffect(() => {
     console.log('🔄 Lectures effect triggered:', { isAuthenticated, isOnline: navigator.onLine });
-    
+
     // Always load cached lectures first for immediate UI
     const cachedLectures = OfflineDataCache.getCachedLectures();
     if (cachedLectures) {
@@ -554,7 +554,7 @@ function App() {
       setLectures(cachedLectures);
       setFilteredLectures(cachedLectures);
     }
-    
+
     // Only fetch fresh data if online AND authenticated
     if (isAuthenticated && navigator.onLine) {
       console.log('📡 Fetching fresh lectures from Firebase');
@@ -562,7 +562,7 @@ function App() {
         collection(db, 'lectures'),
         orderBy('uploadDate', 'desc')
       );
-      
+
       const unsubscribe = onSnapshot(
         lecturesQuery,
         (snapshot) => {
@@ -570,7 +570,7 @@ function App() {
             id: doc.id,
             ...doc.data()
           })) as Lecture[];
-          
+
           // Only update state and cache if we got actual data
           if (lecturesList.length > 0) {
             setLectures(lecturesList);
@@ -587,15 +587,15 @@ function App() {
           // Keep using cached data
         }
       );
-      
+
       return () => unsubscribe();
     } else if (isAuthenticated && !navigator.onLine) {
       console.log('📱 Offline mode: Using cached lectures only');
     } else {
-      console.log('⏭️ Skipping Firebase fetch:', { 
-        hasAuth: !!isAuthenticated, 
+      console.log('⏭️ Skipping Firebase fetch:', {
+        hasAuth: !!isAuthenticated,
         isOnline: navigator.onLine,
-        shouldFetch: isAuthenticated && navigator.onLine 
+        shouldFetch: isAuthenticated && navigator.onLine
       });
     }
   }, [isAuthenticated, navigator.onLine]);
@@ -603,26 +603,26 @@ function App() {
   // Filter lectures when search term or filter category changes
   useEffect(() => {
     let filtered = [...lectures];
-    
+
     if (searchTerm) {
-      filtered = filtered.filter(lecture => 
+      filtered = filtered.filter(lecture =>
         lecture.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         lecture.subject.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
+
     if (filterSubject !== 'all') {
-      filtered = filtered.filter(lecture => 
+      filtered = filtered.filter(lecture =>
         lecture.subject.toLowerCase() === filterSubject.toLowerCase()
       );
     }
-    
+
     if (filterStage !== 'all') {
-      filtered = filtered.filter(lecture => 
+      filtered = filtered.filter(lecture =>
         lecture.stage.toLowerCase() === filterStage.toLowerCase()
       );
     }
-    
+
     setFilteredLectures(filtered);
   }, [searchTerm, filterSubject, filterStage, lectures]);
 
@@ -631,7 +631,7 @@ function App() {
     e.preventDefault();
     setSignupError('');
     setIsLoading(true);
-    
+
     try {
       // Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
@@ -639,7 +639,7 @@ function App() {
         signupEmail,
         signupPassword
       );
-      
+
       // Add user to Firestore with favorites and completedLectures arrays
       const newUser: Omit<User, 'id' | 'password'> = {
         email: signupEmail,
@@ -649,18 +649,18 @@ function App() {
         favorites: [],
         completedLectures: []
       };
-      
+
       await addDoc(collection(db, 'users'), newUser);
-      
+
       // Reset form
       setSignupEmail('');
       setSignupPassword('');
       setSignupName('');
       setIsSignup(false);
-      
+
     } catch (error: any) {
       console.error('Signup error:', error);
-      
+
       if (error.code === 'auth/email-already-in-use') {
         setSignupError('Email is already registered');
       } else if (error.code === 'auth/weak-password') {
@@ -668,7 +668,7 @@ function App() {
       } else {
         setSignupError('An error occurred during signup');
       }
-      
+
       setIsLoading(false);
     }
   };
@@ -678,14 +678,14 @@ function App() {
     e.preventDefault();
     setLoginError('');
     setIsLoading(true);
-    
+
     try {
       // Sign in with Firebase Auth
       await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
       // Auth state listener will handle the rest
     } catch (error: any) {
       console.error('Login error:', error);
-      
+
       if (error.code === 'auth/invalid-credential') {
         setLoginError('Invalid email or password');
       } else if (error.code === 'auth/too-many-requests') {
@@ -693,7 +693,7 @@ function App() {
       } else {
         setLoginError('An error occurred during login');
       }
-      
+
       setIsLoading(false);
     }
   };
@@ -715,9 +715,9 @@ function App() {
     e.preventDefault();
     if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'teacher')) return;
     if (!newAnnouncementTitle.trim() || !newAnnouncementContent.trim()) return;
-    
+
     setIsLoading(true);
-    
+
     try {
       // Create announcement in Firestore with creator name
       const newAnnouncement = {
@@ -729,15 +729,15 @@ function App() {
         createdAt: serverTimestamp(),
         expiryDate: newAnnouncementExpiryDate || null
       };
-      
+
       await addDoc(collection(db, 'announcements'), newAnnouncement);
-      
+
       // Reset form
       setNewAnnouncementTitle('');
       setNewAnnouncementContent('');
       setNewAnnouncementType('homework');
       setNewAnnouncementExpiryDate('');
-      
+
       alert('Announcement created successfully!');
     } catch (error) {
       console.error('Error creating announcement:', error);
@@ -746,7 +746,7 @@ function App() {
       setIsLoading(false);
     }
   };
-  
+
   // Delete announcement (admin and creator only)
   const handleDeleteAnnouncement = async (announcementId: string, createdBy: string) => {
     // Check if user has permission to delete
@@ -754,17 +754,17 @@ function App() {
       alert('You do not have permission to delete this announcement');
       return;
     }
-    
+
     if (!confirm('Are you sure you want to delete this announcement?')) {
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       // Delete from Firestore
       await deleteDoc(doc(db, 'announcements', announcementId));
-      
+
       alert('Announcement deleted successfully');
     } catch (error) {
       console.error('Error deleting announcement:', error);
@@ -773,18 +773,18 @@ function App() {
       setIsLoading(false);
     }
   };
-  
+
   // Mark announcement as read
   const markAnnouncementAsRead = async (announcementId: string) => {
     if (!currentUser) return;
-    
+
     try {
       const userRef = doc(db, 'users', currentUser.id);
       const unreadAnnouncements = currentUser.unreadAnnouncements || [];
-      
+
       // If already read, do nothing
       if (unreadAnnouncements.includes(announcementId)) return;
-      
+
       // Update local state
       const updatedUser = {
         ...currentUser,
@@ -792,7 +792,7 @@ function App() {
       };
       setCurrentUser(updatedUser);
       setUnreadCount(prev => Math.max(0, prev - 1));
-      
+
       // Update Firestore
       await updateDoc(userRef, {
         unreadAnnouncements: updatedUser.unreadAnnouncements
@@ -801,25 +801,25 @@ function App() {
       console.error('Error marking announcement as read:', error);
     }
   };
-  
+
   // Toggle notifications panel
   const toggleNotifications = () => {
     setShowNotifications(!showNotifications);
   };
-  
+
   // Add new user (admin only)
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       // Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
-        auth, 
-        newUserEmail, 
+        auth,
+        newUserEmail,
         newUserPassword
       );
-      
+
       // Add user to Firestore with favorites and completedLectures arrays
       const newUser: Omit<User, 'id' | 'password'> & { uid: string } = {
         email: newUserEmail,
@@ -830,9 +830,9 @@ function App() {
         favorites: [],
         completedLectures: []
       };
-      
+
       await addDoc(collection(db, 'users'), newUser);
-      
+
       // Reset form
       setNewUserEmail('');
       setNewUserPassword('');
@@ -840,7 +840,7 @@ function App() {
       setNewUserRole('student');
     } catch (error: any) {
       console.error('Error adding user:', error);
-      
+
       if (error.code === 'auth/email-already-in-use') {
         alert('Email is already in use');
       } else {
@@ -880,21 +880,21 @@ function App() {
       alert('You cannot delete your own account!');
       return;
     }
-    
+
     if (!confirm('Are you sure you want to delete this user?')) {
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       // Delete user from Firestore
       await deleteDoc(doc(db, 'users', userId));
-      
+
       // Note: Deleting from Firebase Auth requires admin SDK
       // which can't be used in client-side code
       // In a real app, you would use a Cloud Function for this
-      
+
       alert('User deleted successfully');
     } catch (error) {
       console.error('Error deleting user:', error);
@@ -908,16 +908,16 @@ function App() {
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCategory.trim()) return;
-    
+
     setIsLoading(true);
-    
+
     try {
       await addDoc(collection(db, 'categories'), {
         name: newCategory.trim(),
         type: newCategoryType,
         createdAt: serverTimestamp()
       });
-      
+
       setNewCategory('');
       alert('Category added successfully');
     } catch (error) {
@@ -933,9 +933,9 @@ function App() {
     if (!confirm('Are you sure you want to delete this category?')) {
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       await deleteDoc(doc(db, 'categories', categoryId));
       alert('Category deleted successfully');
@@ -1004,7 +1004,7 @@ function App() {
         setUploadProgress(100);
       } else {
         throw new Error('No URL returned from upload. Response: ' + JSON.stringify(result));
-   }
+      }
     } catch (error: any) {
       console.error('Error uploading file:', error);
 
@@ -1064,17 +1064,17 @@ function App() {
       alert('You do not have permission to delete this lecture');
       return;
     }
-    
+
     if (!confirm('Are you sure you want to delete this lecture?')) {
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       // Delete from Firestore
       await deleteDoc(doc(db, 'lectures', lecture.id));
-      
+
       alert('Lecture deleted successfully');
     } catch (error) {
       console.error('Error deleting lecture:', error);
@@ -1092,7 +1092,7 @@ function App() {
       const userRef = doc(db, 'users', currentUser.id);
       const userDoc = await getDoc(userRef);
       const userData = userDoc.data();
-      
+
       // Initialize favorites array if it doesn't exist
       const favorites = userData?.favorites || [];
 
@@ -1133,7 +1133,7 @@ function App() {
       const userRef = doc(db, 'users', currentUser.id);
       const userDoc = await getDoc(userRef);
       const userData = userDoc.data();
-      
+
       // Initialize completedLectures array if it doesn't exist
       const completedLectures = userData?.completedLectures || [];
 
@@ -1182,7 +1182,7 @@ function App() {
         return;
       }
     }
-    
+
     // Open the PDF (Service Worker will cache it automatically)
     window.open(lecture.pdfUrl, '_blank');
   };
@@ -1201,179 +1201,179 @@ function App() {
     const sessionInfo = OfflineAuthManager.getSessionInfo();
     const hasOfflineSession = sessionInfo.hasCache;
     const isOffline = !sessionInfo.isOnline;
-    
+
     return (
-    <div className="auth-container">
-      <div className="auth-form">
-        <div className="auth-logo">
-          <div className="auth-logo-circle">
-            <FileText size={32} color="white" />
+      <div className="auth-container">
+        <div className="auth-form">
+          <div className="auth-logo">
+            <div className="auth-logo-circle">
+              <FileText size={32} color="white" />
+            </div>
           </div>
+          <h2>Lecture Management System</h2>
+          <p>{isSignup ? 'Create your account' : 'Login to your account'}</p>
+
+          {/* Offline mode indicator */}
+          {isOffline && (
+            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 mb-4">
+              <p className="text-orange-800 dark:text-orange-300 text-sm">
+                ⚠️ You are currently offline.
+                {hasOfflineSession ? (
+                  <span className="block mt-1">Your previous session is still active. Please wait while we restore it...</span>
+                ) : (
+                  <span className="block mt-1">Please connect to the internet to sign in.</span>
+                )}
+              </p>
+            </div>
+          )}
+
+          {isSignup ? (
+            <form onSubmit={handleSignup}>
+              {signupError && (
+                <div className="error-message">
+                  {signupError}
+                </div>
+              )}
+              <div className="form-group">
+                <label htmlFor="signupName">Full Name</label>
+                <div className="input-with-icon">
+                  <User className="input-icon" size={18} />
+                  <input
+                    type="text"
+                    id="signupName"
+                    value={signupName}
+                    onChange={(e) => setSignupName(e.target.value)}
+                    required
+                    className="input-field pl-10"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="signupEmail">Email</label>
+                <div className="input-with-icon">
+                  <User className="input-icon" size={18} />
+                  <input
+                    type="email"
+                    id="signupEmail"
+                    value={signupEmail}
+                    onChange={(e) => setSignupEmail(e.target.value)}
+                    required
+                    className="input-field pl-10"
+                    placeholder="Enter your email"
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="signupPassword">Password</label>
+                <div className="input-with-icon">
+                  <Lock className="input-icon" size={18} />
+                  <input
+                    type="password"
+                    id="signupPassword"
+                    value={signupPassword}
+                    onChange={(e) => setSignupPassword(e.target.value)}
+                    required
+                    className="input-field pl-10"
+                    placeholder="Create a password"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="btn-primary w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="loading-spinner"></span>
+                ) : (
+                  <>
+                    <LogIn size={18} /> Sign Up
+                  </>
+                )}
+              </button>
+              <p className="text-center mt-4">
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignup(false);
+                    setSignupError('');
+                  }}
+                  className="text-primary-color hover:underline"
+                >
+                  Sign In
+                </button>
+              </p>
+            </form>
+          ) : (
+            <form onSubmit={handleLogin}>
+              {loginError && (
+                <div className="error-message">
+                  {loginError}
+                </div>
+              )}
+              <div className="form-group">
+                <label htmlFor="email">Email</label>
+                <div className="input-with-icon">
+                  <User className="input-icon" size={18} />
+                  <input
+                    type="email"
+                    id="email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    required
+                    className="input-field pl-10"
+                    placeholder="Enter your email"
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="password">Password</label>
+                <div className="input-with-icon">
+                  <Lock className="input-icon" size={18} />
+                  <input
+                    type="password"
+                    id="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    required
+                    className="input-field pl-10"
+                    placeholder="Enter your password"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="btn-primary w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="loading-spinner"></span>
+                ) : (
+                  <>
+                    <LogIn size={18} /> Sign In
+                  </>
+                )}
+              </button>
+              <p className="text-center mt-4">
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignup(true);
+                    setLoginError('');
+                  }}
+                  className="text-primary-color hover:underline"
+                >
+                  Sign Up
+                </button>
+              </p>
+            </form>
+          )}
         </div>
-        <h2>Lecture Management System</h2>
-        <p>{isSignup ? 'Create your account' : 'Login to your account'}</p>
-        
-        {/* Offline mode indicator */}
-        {isOffline && (
-          <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 mb-4">
-            <p className="text-orange-800 dark:text-orange-300 text-sm">
-              ⚠️ You are currently offline.
-              {hasOfflineSession ? (
-                <span className="block mt-1">Your previous session is still active. Please wait while we restore it...</span>
-              ) : (
-                <span className="block mt-1">Please connect to the internet to sign in.</span>
-              )}
-            </p>
-          </div>
-        )}
-        
-        {isSignup ? (
-          <form onSubmit={handleSignup}>
-            {signupError && (
-              <div className="error-message">
-                {signupError}
-              </div>
-            )}
-            <div className="form-group">
-              <label htmlFor="signupName">Full Name</label>
-              <div className="input-with-icon">
-                <User className="input-icon" size={18} />
-                <input
-                  type="text"
-                  id="signupName"
-                  value={signupName}
-                  onChange={(e) => setSignupName(e.target.value)}
-                  required
-                  className="input-field pl-10"
-                  placeholder="Enter your full name"
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <label htmlFor="signupEmail">Email</label>
-              <div className="input-with-icon">
-                <User className="input-icon" size={18} />
-                <input
-                  type="email"
-                  id="signupEmail"
-                  value={signupEmail}
-                  onChange={(e) => setSignupEmail(e.target.value)}
-                  required
-                  className="input-field pl-10"
-                  placeholder="Enter your email"
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <label htmlFor="signupPassword">Password</label>
-              <div className="input-with-icon">
-                <Lock className="input-icon" size={18} />
-                <input
-                  type="password"
-                  id="signupPassword"
-                  value={signupPassword}
-                  onChange={(e) => setSignupPassword(e.target.value)}
-                  required
-                  className="input-field pl-10"
-                  placeholder="Create a password"
-                />
-              </div>
-            </div>
-            <button 
-              type="submit" 
-              className="btn-primary w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="loading-spinner"></span>
-              ) : (
-                <>
-                  <LogIn size={18} /> Sign Up
-                </>
-              )}
-            </button>
-            <p className="text-center mt-4">
-              Already have an account?{' '}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignup(false);
-                  setSignupError('');
-                }}
-                className="text-primary-color hover:underline"
-              >
-                Sign In
-              </button>
-            </p>
-          </form>
-        ) : (
-          <form onSubmit={handleLogin}>
-            {loginError && (
-              <div className="error-message">
-                {loginError}
-              </div>
-            )}
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <div className="input-with-icon">
-                <User className="input-icon" size={18} />
-                <input
-                  type="email"
-                  id="email"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  required
-                  className="input-field pl-10"
-                  placeholder="Enter your email"
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <div className="input-with-icon">
-                <Lock className="input-icon" size={18} />
-                <input
-                  type="password"
-                  id="password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  required
-                  className="input-field pl-10"
-                  placeholder="Enter your password"
-                />
-              </div>
-            </div>
-            <button 
-              type="submit" 
-              className="btn-primary w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="loading-spinner"></span>
-              ) : (
-                <>
-                  <LogIn size={18} /> Sign In
-                </>
-              )}
-            </button>
-            <p className="text-center mt-4">
-              Don't have an account?{' '}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignup(true);
-                  setLoginError('');
-                }}
-                className="text-primary-color hover:underline"
-              >
-                Sign Up
-              </button>
-            </p>
-          </form>
-        )}
       </div>
-    </div>
-  );
+    );
   };
 
   // Render user management (admin only)
@@ -1381,7 +1381,7 @@ function App() {
     <div className="content-container">
       <div className="flex justify-between items-center mb-4">
         <h2 className="section-title">User Management</h2>
-        <button 
+        <button
           onClick={handleForceSignOut}
           className="btn-danger flex items-center gap-2"
           disabled={isLoading}
@@ -1390,7 +1390,7 @@ function App() {
           Force Sign Out All Users
         </button>
       </div>
-      
+
       <div className="card">
         <h3 className="card-title">Add New User</h3>
         <form onSubmit={handleAddUser}>
@@ -1441,8 +1441,8 @@ function App() {
               <option value="student">Student</option>
             </select>
           </div>
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn-primary"
             disabled={isLoading}
           >
@@ -1454,7 +1454,7 @@ function App() {
           </button>
         </form>
       </div>
-      
+
       <div className="card mt-6">
         <h3 className="card-title">Categories Management</h3>
         <form onSubmit={handleAddCategory} className="mb-4">
@@ -1478,8 +1478,8 @@ function App() {
               <option value="subject">Subject</option>
               <option value="stage">Stage</option>
             </select>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="btn-primary"
               disabled={isLoading}
             >
@@ -1488,13 +1488,13 @@ function App() {
             </button>
           </div>
         </form>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <h4 className="text-lg font-semibold mb-3">Subjects</h4>
             {subjects.map((category) => (
-              <div 
-                 
+              <div
+
                 key={category.id}
                 className="bg-gray-50 p-4 rounded-lg flex justify-between items-center mb-2"
               >
@@ -1509,11 +1509,11 @@ function App() {
               </div>
             ))}
           </div>
-          
+
           <div>
             <h4 className="text-lg font-semibold mb-3">Stages</h4>
             {stages.map((category) => (
-              <div 
+              <div
                 key={category.id}
                 className="bg-gray-50 p-4 rounded-lg flex justify-between items-center mb-2"
               >
@@ -1530,7 +1530,7 @@ function App() {
           </div>
         </div>
       </div>
-      
+
       <div className="card mt-6">
         <h3 className="card-title">User List</h3>
         <div className="user-grid">
@@ -1768,8 +1768,8 @@ function App() {
             )}
           </div>
         </div>
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           className="btn-primary"
           disabled={!newLectureUrl || isLoading}
         >
@@ -1794,9 +1794,9 @@ function App() {
     return (
       <div className="content-container">
         <h2 className="section-title">Lectures</h2>
-        
+
         {currentUser?.role === 'teacher' && renderLectureUpload()}
-        
+
         <div className="search-filter-container">
           <div className="search-container">
             <Search size={20} className="search-icon" />
@@ -1808,7 +1808,7 @@ function App() {
               className="search-input"
             />
           </div>
-          
+
           <div className="filter-container">
             <Filter size={20} className="filter-icon" />
             <select
@@ -1824,7 +1824,7 @@ function App() {
               ))}
             </select>
           </div>
-          
+
           <div className="filter-container">
             <Filter size={20} className="filter-icon" />
             <select
@@ -1853,7 +1853,7 @@ function App() {
             </button>
           )}
         </div>
-        
+
         <div className="card mt-6">
           <h3 className="card-title">
             {showFavorites ? 'Favorite Lectures' : 'Available Lectures'}
@@ -1861,8 +1861,8 @@ function App() {
           <div className="lecture-grid">
             {displayedLectures.length > 0 ? (
               displayedLectures.map((lecture) => (
-                <div 
-                  key={lecture.id} 
+                <div
+                  key={lecture.id}
                   className="lecture-card"
                 >
                   <div className="lecture-card-header">
@@ -1891,8 +1891,8 @@ function App() {
                               'btn-favorite': currentUser?.favorites?.includes(lecture.id)
                             })}
                           >
-                            <Heart 
-                              size={20} 
+                            <Heart
+                              size={20}
                               fill={currentUser?.favorites?.includes(lecture.id) ? "#ef4444" : "none"}
                             />
                           </button>
@@ -1902,8 +1902,8 @@ function App() {
                               'btn-completed': currentUser?.completedLectures?.includes(lecture.id)
                             })}
                           >
-                            <CheckCircle 
-                              size={20} 
+                            <CheckCircle
+                              size={20}
                               fill={currentUser?.completedLectures?.includes(lecture.id) ? "#10b981" : "none"}
                             />
                           </button>
@@ -1937,29 +1937,22 @@ function App() {
   const renderAboutUs = () => (
     <div className="content-container">
       <h2 className="section-title">About Us</h2>
-      
+
       <div className="card about-card">
-        <div className="about-header">
-          <img 
-            src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" 
-            alt="University Campus" 
-            className="about-banner"
-          />
-        </div>
-        
+
         <div className="about-body">
           <h3 className="about-title">
             University Lecture Management System
           </h3>
-          
+
           <p className="about-description">
             Welcome to our University Lecture Management System, a sophisticated digital platform designed to revolutionize how educational content is organized and accessed within our university. This system serves as a central hub for managing academic lectures across different subjects and stages, ensuring seamless access to educational materials for both educators and students.
-          </p>
-          
+          </p >
+
           <h4 className="about-subtitle">
             Core Features:
           </h4>
-          
+
           <ul className="about-features">
             <li>Multi-stage lecture organization with customizable subject categories</li>
             <li>Role-based access control for administrators, teachers, and students</li>
@@ -1969,34 +1962,34 @@ function App() {
             <li>Real-time updates</li>
             <li>Comprehensive user management system</li>
           </ul>
-          
+
           <div className="about-creator">
             <div className="creator-avatar">
               <User size={32} />
             </div>
             <div className="creator-info">
-              <p className="creator-name">Ahmed Shukor</p>
+              <p className="creator-name">Ahmed Shukur Hameed</p>
               <p className="creator-title">Computer Network Engineer</p>
             </div>
           </div>
-          
+
           <p className="about-copyright">
             © 2025 University of Technology - Lecture Management System. All rights reserved.
           </p>
-        </div>
-      </div>
-    </div>
+        </div >
+      </div >
+    </div >
   );
 
   // Render announcements section
   const renderAnnouncements = () => (
     <div className="content-container">
       <h2 className="section-title">Announcements</h2>
-      
+
       {(currentUser?.role === 'admin' || currentUser?.role === 'teacher') && (
         <div className="card">
           <h3 className="card-title">Create New Announcement</h3>
-          
+
           <form onSubmit={handleAddAnnouncement}>
             <div className="form-group">
               <label htmlFor="announcementTitle">Title</label>
@@ -2009,7 +2002,7 @@ function App() {
                 required
               />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="announcementContent">Content</label>
               <textarea
@@ -2021,7 +2014,7 @@ function App() {
                 required
               />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="announcementType">Type</label>
               <select
@@ -2036,7 +2029,7 @@ function App() {
                 <option value="other">Other</option>
               </select>
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="announcementExpiry">Expiry Date (Optional)</label>
               <input
@@ -2048,7 +2041,7 @@ function App() {
                 min={new Date().toISOString().split('T')[0]}
               />
             </div>
-            
+
             <button
               type="submit"
               className="btn-primary w-full"
@@ -2065,16 +2058,16 @@ function App() {
           </form>
         </div>
       )}
-      
+
       <div className="announcement-grid">
         {announcements.length > 0 ? (
           announcements.map((announcement) => {
             const isUnread = currentUser?.unreadAnnouncements?.includes(announcement.id) === false;
             const creator = users.find(user => user.id === announcement.createdBy);
-            
+
             return (
-              <div 
-                key={announcement.id} 
+              <div
+                key={announcement.id}
                 className={`announcement-card ${isUnread ? 'announcement-unread' : ''}`}
                 onClick={() => markAnnouncementAsRead(announcement.id)}
               >
@@ -2084,21 +2077,21 @@ function App() {
                     {announcement.type}
                   </span>
                 </div>
-                
+
                 <div className="announcement-card-body">
                   <p className="announcement-content">{announcement.content}</p>
                 </div>
-                
+
                 <div className="announcement-card-footer">
                   <div className="announcement-meta">
                     <span className="announcement-creator">By: {announcement.creatorName || creator?.name || 'Unknown'}</span>
                     <span className="announcement-date">
-                      {announcement.createdAt?.toDate ? 
-                        new Date(announcement.createdAt.toDate()).toLocaleDateString() : 
+                      {announcement.createdAt?.toDate ?
+                        new Date(announcement.createdAt.toDate()).toLocaleDateString() :
                         'Just now'}
                     </span>
                   </div>
-                  
+
                   {(currentUser?.role === 'admin' || currentUser?.id === announcement.createdBy) && (
                     <button
                       onClick={(e) => {
@@ -2123,7 +2116,7 @@ function App() {
       </div>
     </div>
   );
-  
+
   // Render navigation
   const renderNavigation = () => (
     <>
@@ -2132,10 +2125,10 @@ function App() {
           <Menu size={24} />
         </button>
         <h1>LMS</h1>
-        
+
         <div className="notification-container">
-          <button 
-            className="notification-button" 
+          <button
+            className="notification-button"
             onClick={toggleNotifications}
           >
             <div className="notification-icon">
@@ -2148,26 +2141,26 @@ function App() {
               )}
             </div>
           </button>
-          
+
           {showNotifications && (
             <div className="notification-dropdown">
               <div className="notification-header">
                 <h3>Notifications</h3>
-                <button 
-                  className="notification-close" 
+                <button
+                  className="notification-close"
                   onClick={toggleNotifications}
                 >
                   <X size={18} />
                 </button>
               </div>
-              
+
               <div className="notification-list">
                 {announcements.length > 0 ? (
                   announcements.slice(0, 5).map(announcement => {
                     const isUnread = currentUser?.unreadAnnouncements?.includes(announcement.id) === false;
                     return (
-                      <div 
-                        key={announcement.id} 
+                      <div
+                        key={announcement.id}
                         className={`notification-item ${isUnread ? 'notification-unread' : ''}`}
                         onClick={() => {
                           markAnnouncementAsRead(announcement.id);
@@ -2192,9 +2185,9 @@ function App() {
                   </div>
                 )}
               </div>
-              
+
               <div className="notification-footer">
-                <button 
+                <button
                   className="btn-secondary w-full"
                   onClick={() => {
                     setActiveView('announcements');
@@ -2208,9 +2201,9 @@ function App() {
           )}
         </div>
       </div>
-      
+
       {(isSidebarOpen || window.innerWidth > 768) && (
-        <nav 
+        <nav
           className={`sidebar ${isSidebarOpen ? 'sidebar-open' : ''}`}
           ref={sidebarRef}
         >
@@ -2224,7 +2217,7 @@ function App() {
               <X size={24} />
             </button>
           </div>
-          
+
           <div className="user-profile">
             <div className="user-avatar">
               <User size={24} />
@@ -2234,7 +2227,7 @@ function App() {
               <span className={`role-badge role-${currentUser?.role}`}>{currentUser?.role}</span>
             </div>
           </div>
-          
+
           <ul className="nav-links">
             <li>
               <button
@@ -2247,7 +2240,7 @@ function App() {
                 <FileText size={20} /> Lectures
               </button>
             </li>
-            
+
             <li>
               <button
                 className={activeView === 'announcements' ? 'active' : ''}
@@ -2266,7 +2259,7 @@ function App() {
                 )}
               </button>
             </li>
-            
+
             {currentUser?.role === 'admin' && (
               <li>
                 <button
@@ -2280,7 +2273,7 @@ function App() {
                 </button>
               </li>
             )}
-            
+
             <li>
               <button
                 className={activeView === 'about' ? 'active' : ''}
@@ -2292,7 +2285,7 @@ function App() {
                 <Info size={20} /> About Us
               </button>
             </li>
-            
+
             <li>
               <button
                 className={activeView === 'customize' ? 'active' : ''}
@@ -2304,10 +2297,10 @@ function App() {
                 <Palette size={20} /> Customize Colors
               </button>
             </li>
-            
+
             <li className="nav-footer">
-              <button 
-                onClick={handleLogout} 
+              <button
+                onClick={handleLogout}
                 className="btn-logout"
               >
                 <LogOut size={20} /> Logout

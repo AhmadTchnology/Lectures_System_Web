@@ -1,40 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { RotateCcw, Save, Palette } from 'lucide-react';
+import { RotateCcw, Save, Palette, Check } from 'lucide-react';
 import { ColorSettingsManager, ColorSettings } from '../utils/colorSettings';
+import { COLOR_TEMPLATES, Template } from '../utils/colorTemplates';
 
 interface ColorCustomizationProps {
   currentTheme: 'light' | 'dark';
 }
 
 const ColorCustomization: React.FC<ColorCustomizationProps> = ({ currentTheme }) => {
-  const [colors, setColors] = useState<ColorSettings>(() => 
+  const [colors, setColors] = useState<ColorSettings>(() =>
     ColorSettingsManager.getColors(currentTheme)
   );
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
 
   // Update colors when theme changes
   useEffect(() => {
     const newColors = ColorSettingsManager.getColors(currentTheme);
     setColors(newColors);
+    setActiveTemplateId(null);
   }, [currentTheme]);
 
   const handleColorChange = (key: keyof ColorSettings, value: string) => {
     const updatedColors = { ...colors, [key]: value };
     setColors(updatedColors);
+    setActiveTemplateId(null); // Clear active template if user manually changes a color
     // Apply colors in real-time for preview
     ColorSettingsManager.applyColors(currentTheme, updatedColors);
+  };
+
+  const handleTemplateSelect = (template: Template) => {
+    const updatedColors = { ...colors, ...template.colors };
+    setColors(updatedColors as ColorSettings);
+    setActiveTemplateId(template.id);
+    ColorSettingsManager.applyColors(currentTheme, updatedColors as ColorSettings);
   };
 
   const handleSave = () => {
     setIsSaving(true);
     setSaveMessage('');
-    
+
     try {
       ColorSettingsManager.saveColors(currentTheme, colors);
       ColorSettingsManager.applyColors(currentTheme, colors);
       setSaveMessage('✅ Colors saved successfully!');
-      
+
       setTimeout(() => {
         setSaveMessage('');
         setIsSaving(false);
@@ -49,9 +60,10 @@ const ColorCustomization: React.FC<ColorCustomizationProps> = ({ currentTheme })
     if (confirm(`Reset all colors to defaults for ${currentTheme} mode?`)) {
       const defaultColors = ColorSettingsManager.resetColors(currentTheme);
       setColors(defaultColors);
+      setActiveTemplateId(null);
       ColorSettingsManager.applyColors(currentTheme, defaultColors);
       setSaveMessage('🔄 Colors reset to defaults');
-      
+
       setTimeout(() => {
         setSaveMessage('');
       }, 2000);
@@ -92,6 +104,9 @@ const ColorCustomization: React.FC<ColorCustomizationProps> = ({ currentTheme })
     }
   ];
 
+  // Get available templates for current theme
+  const availableTemplates = COLOR_TEMPLATES[currentTheme] || [];
+
   return (
     <div className="content-container">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
@@ -102,7 +117,7 @@ const ColorCustomization: React.FC<ColorCustomizationProps> = ({ currentTheme })
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <button 
+          <button
             onClick={handleReset}
             className="btn-secondary flex items-center justify-center gap-2 w-full sm:w-auto"
           >
@@ -110,7 +125,7 @@ const ColorCustomization: React.FC<ColorCustomizationProps> = ({ currentTheme })
             <span className="hidden sm:inline">Reset to Defaults</span>
             <span className="sm:hidden">Reset</span>
           </button>
-          <button 
+          <button
             onClick={handleSave}
             className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto"
             disabled={isSaving}
@@ -127,6 +142,56 @@ const ColorCustomization: React.FC<ColorCustomizationProps> = ({ currentTheme })
           {saveMessage}
         </div>
       )}
+
+      {/* Templates Section */}
+      <div className="card mb-6">
+        <h3 className="card-title flex items-center gap-2 mb-4">
+          <Palette size={20} />
+          Preset Templates
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {availableTemplates.map((template) => (
+            <button
+              key={template.id}
+              onClick={() => handleTemplateSelect(template)}
+              className={`
+                relative flex flex-col items-start p-3 rounded-lg border transition-all
+                ${activeTemplateId === template.id
+                  ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
+                  : 'border-border hover:border-primary/50 hover:bg-gray-50 dark:hover:bg-gray-800'}
+              `}
+            >
+              <div className="flex gap-2 mb-2 w-full">
+                <div
+                  className="w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
+                  style={{ backgroundColor: template.colors.primaryColor }}
+                  title="Primary Color"
+                />
+                <div
+                  className="w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
+                  style={{ backgroundColor: template.colors.backgroundColor }}
+                  title="Background Color"
+                />
+                <div
+                  className="w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
+                  style={{ backgroundColor: template.colors.cardBackground }}
+                  title="Card Background"
+                />
+              </div>
+              <div className="text-left">
+                <div className="font-medium text-sm text-primary">{template.name}</div>
+                <div className="text-xs text-secondary mt-0.5 line-clamp-1">{template.description}</div>
+              </div>
+
+              {activeTemplateId === template.id && (
+                <div className="absolute top-2 right-2 text-primary">
+                  <Check size={16} />
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="color-customization-grid">
         {colorGroups.map((group, groupIndex) => (
@@ -180,7 +245,7 @@ const ColorCustomization: React.FC<ColorCustomizationProps> = ({ currentTheme })
               </div>
             </div>
           </div>
-          
+
           <div className="preview-badges">
             <span className="preview-badge badge-success">Success</span>
             <span className="preview-badge badge-warning">Warning</span>
