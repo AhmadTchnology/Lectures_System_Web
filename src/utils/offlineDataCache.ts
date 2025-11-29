@@ -1,4 +1,9 @@
-// Offline Data Cache for Lectures, Categories, etc.
+/**
+ * Offline Data Cache for Lectures, Categories, etc.
+ * Enhanced with version checking for automatic cache invalidation
+ */
+
+import { CacheVersionManager } from './cacheVersion';
 
 const LECTURES_CACHE_KEY = 'lms_cached_lectures';
 const CATEGORIES_CACHE_KEY = 'lms_cached_categories';
@@ -8,9 +13,34 @@ interface CacheEntry<T> {
   data: T;
   cachedAt: number;
   expiresAt: number;
+  version: string; // App version when cached
 }
 
 export class OfflineDataCache {
+  /**
+   * Check if cache entry is valid (not expired and version matches)
+   */
+  private static isCacheValid<T>(cache: CacheEntry<T>): boolean {
+    const currentVersion = CacheVersionManager.getAppVersion();
+
+    // Check version match
+    if (cache.version !== currentVersion) {
+      console.log('⚠️ Cache version mismatch:', {
+        cached: cache.version,
+        current: currentVersion
+      });
+      return false;
+    }
+
+    // Check expiration
+    if (Date.now() > cache.expiresAt) {
+      console.log('⏰ Cache expired');
+      return false;
+    }
+
+    return true;
+  }
+
   // Save lectures to cache
   static saveLectures(lectures: any[]): void {
     try {
@@ -19,14 +49,15 @@ export class OfflineDataCache {
         console.log('⚠️ Skipping cache: Empty lectures data');
         return;
       }
-      
+
       const cache: CacheEntry<any[]> = {
         data: lectures,
         cachedAt: Date.now(),
         expiresAt: Date.now() + CACHE_DURATION,
+        version: CacheVersionManager.getAppVersion()
       };
       localStorage.setItem(LECTURES_CACHE_KEY, JSON.stringify(cache));
-      console.log('✅ Lectures cached:', lectures.length, 'items');
+      console.log('✅ Lectures cached:', lectures.length, 'items (version:', cache.version + ')');
     } catch (error) {
       console.error('Error caching lectures:', error);
     }
@@ -43,17 +74,19 @@ export class OfflineDataCache {
 
       const cache: CacheEntry<any[]> = JSON.parse(cached);
 
-      // Check if cache has expired
-      if (Date.now() > cache.expiresAt) {
-        console.log('⏰ Lectures cache expired');
+      // Validate cache
+      if (!this.isCacheValid(cache)) {
+        console.log('🗑️ Removing invalid lectures cache');
         localStorage.removeItem(LECTURES_CACHE_KEY);
         return null;
       }
 
-      console.log('✅ Found cached lectures:', cache.data.length, 'items');
+      console.log('✅ Found valid cached lectures:', cache.data.length, 'items');
       return cache.data;
     } catch (error) {
       console.error('Error getting cached lectures:', error);
+      // Remove corrupted cache
+      localStorage.removeItem(LECTURES_CACHE_KEY);
       return null;
     }
   }
@@ -66,14 +99,15 @@ export class OfflineDataCache {
         console.log('⚠️ Skipping cache: Empty categories data');
         return;
       }
-      
+
       const cache: CacheEntry<any[]> = {
         data: categories,
         cachedAt: Date.now(),
         expiresAt: Date.now() + CACHE_DURATION,
+        version: CacheVersionManager.getAppVersion()
       };
       localStorage.setItem(CATEGORIES_CACHE_KEY, JSON.stringify(cache));
-      console.log('✅ Categories cached:', categories.length, 'items');
+      console.log('✅ Categories cached:', categories.length, 'items (version:', cache.version + ')');
     } catch (error) {
       console.error('Error caching categories:', error);
     }
@@ -90,17 +124,19 @@ export class OfflineDataCache {
 
       const cache: CacheEntry<any[]> = JSON.parse(cached);
 
-      // Check if cache has expired
-      if (Date.now() > cache.expiresAt) {
-        console.log('⏰ Categories cache expired');
+      // Validate cache
+      if (!this.isCacheValid(cache)) {
+        console.log('🗑️ Removing invalid categories cache');
         localStorage.removeItem(CATEGORIES_CACHE_KEY);
         return null;
       }
 
-      console.log('✅ Found cached categories:', cache.data.length, 'items');
+      console.log('✅ Found valid cached categories:', cache.data.length, 'items');
       return cache.data;
     } catch (error) {
       console.error('Error getting cached categories:', error);
+      // Remove corrupted cache
+      localStorage.removeItem(CATEGORIES_CACHE_KEY);
       return null;
     }
   }
@@ -118,25 +154,48 @@ export class OfflineDataCache {
 
   // Get cache info
   static getCacheInfo(): {
-    lectures: { count: number; cachedAt?: number } | null;
-    categories: { count: number; cachedAt?: number } | null;
+    lectures: { count: number; cachedAt?: number; version?: string } | null;
+    categories: { count: number; cachedAt?: number; version?: string } | null;
   } {
-    const lecturesCache = this.getCachedLectures();
-    const categoriesCache = this.getCachedCategories();
+    try {
+      const lecturesCache = localStorage.getItem(LECTURES_CACHE_KEY);
+      const categoriesCache = localStorage.getItem(CATEGORIES_CACHE_KEY);
 
-    return {
-      lectures: lecturesCache
-        ? {
-            count: lecturesCache.length,
-            cachedAt: Date.now(), // Simplified
-          }
-        : null,
-      categories: categoriesCache
-        ? {
-            count: categoriesCache.length,
-            cachedAt: Date.now(),
-          }
-        : null,
-    };
+      let lecturesInfo = null;
+      let categoriesInfo = null;
+
+      if (lecturesCache) {
+        const cache: CacheEntry<any[]> = JSON.parse(lecturesCache);
+        if (this.isCacheValid(cache)) {
+          lecturesInfo = {
+            count: cache.data.length,
+            cachedAt: cache.cachedAt,
+            version: cache.version
+          };
+        }
+      }
+
+      if (categoriesCache) {
+        const cache: CacheEntry<any[]> = JSON.parse(categoriesCache);
+        if (this.isCacheValid(cache)) {
+          categoriesInfo = {
+            count: cache.data.length,
+            cachedAt: cache.cachedAt,
+            version: cache.version
+          };
+        }
+      }
+
+      return {
+        lectures: lecturesInfo,
+        categories: categoriesInfo
+      };
+    } catch (error) {
+      console.error('Error getting cache info:', error);
+      return {
+        lectures: null,
+        categories: null
+      };
+    }
   }
 }
