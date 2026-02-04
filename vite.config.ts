@@ -149,7 +149,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/n8n': {
-        target: 'http://n8n-utech.utopiatech.dpdns.org',
+        target: 'https://n8n-utech.utopiatech.dpdns.org',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/n8n/, ''),
         timeout: 300000, // 5 minutes
