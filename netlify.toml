@@ -41,6 +41,13 @@
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
+# Proxy Redirect for n8n (Production)
+[[redirects]]
+  from = "/api/n8n/*"
+  to = "https://n8n-utech.utopiatech.dpdns.org/:splat"
+  status = 200
+  force = true
+
 # SPA redirect
 [[redirects]]
   from = "/*"
