@@ -112,6 +112,51 @@ service firebase.storage {
 }
 ```
 
+## AI Chat Integration
+
+The system includes an AI Chat feature powered by **n8n** workflows. This allows users to chat with an AI assistant that can be customized via n8n.
+
+### Architecture
+- **Frontend**: React component (`AIChat.tsx`) sends POST requests with user message, name, and role.
+- **Proxy**: Vite (`vite.config.ts`) forwards requests from `/api/n8n` to the actual n8n server to handle CORS.
+- **Backend (n8n)**: Receives the webhook, processes the message (e.g., using OpenAI/Anthropic), stores the chat in PostgreSQL, and returns a response.
+
+### Setup Instructions
+
+1. **Environment Variables**:
+   Add your n8n webhook URL to `.env`:
+   ```bash
+   # Use the local proxy path (recommended for dev)
+   VITE_N8N_WEBHOOK_URL=/api/n8n/webhook/your-workflow-name
+   ```
+
+2. **n8n Workflow**:
+   - Create a **Webhook** node:
+     - Method: `POST`
+     - Path: `your-postgresql-table-name`
+   - Create a **PostgreSQL** node (to store chats):
+     - Operation: `Execute Query`
+     - Query:
+       ```sql
+       INSERT INTO "your-postgresql-table-name" (user_name, user_role, message, "date", "timestamp")
+       VALUES ('{{ $json.body.user }}', '{{ $json.body.role }}', '{{ $json.body.message }}', '{{ $json.body.date }}', '{{ $json.body.timestamp }}');
+       ```
+     - *Note: Ensure you handle single quotes in messages safely.*
+
+3. **Database Schema**:
+   Run this SQL in your PostgreSQL database to create the required table:
+   ```sql
+   CREATE TABLE "your-postgresql-table-name" (
+       id SERIAL PRIMARY KEY,
+       user_name VARCHAR(255) NOT NULL,
+       user_role VARCHAR(50) NOT NULL,
+       message TEXT NOT NULL,
+       date DATE,
+       timestamp TIMESTAMPTZ,
+       created_at TIMESTAMPTZ DEFAULT NOW()
+   );
+   ```
+
 ## Project Structure
 
 ```

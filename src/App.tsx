@@ -15,11 +15,12 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { LogIn, LogOut, Upload, FileText, Users, User, Info, Menu, X, Search, Filter, Lock, Plus, Trash, Heart, HeartOff, CheckCircle, UserX, Palette } from 'lucide-react';
+import { LogIn, LogOut, Upload, FileText, Users, User, Info, Menu, X, Search, Filter, Lock, Plus, Trash, Heart, HeartOff, CheckCircle, UserX, Palette, MessageSquare } from 'lucide-react';
 import classNames from 'classnames';
 import './App.css';
 import ThemeToggle from './components/ThemeToggle.jsx';
 import ColorCustomization from './components/ColorCustomization';
+import AIChat from './components/AIChat';
 import { useLectureCache } from './hooks/useLectureCache';
 import { OfflineAuthManager } from './utils/offlineAuth';
 import { OfflineDataCache } from './utils/offlineDataCache';
@@ -2243,6 +2244,18 @@ function App() {
 
             <li>
               <button
+                className={activeView === 'chat' ? 'active' : ''}
+                onClick={() => {
+                  setActiveView('chat');
+                  setIsSidebarOpen(false);
+                }}
+              >
+                <MessageSquare size={20} /> AI Chat
+              </button>
+            </li>
+
+            <li>
+              <button
                 className={activeView === 'announcements' ? 'active' : ''}
                 onClick={() => {
                   setActiveView('announcements');
@@ -2337,6 +2350,15 @@ function App() {
             {activeView === 'lectures' && renderLecturesList()}
             {activeView === 'announcements' && renderAnnouncements()}
             {activeView === 'about' && renderAboutUs()}
+            {activeView === 'chat' && (
+              <div className="h-full p-4 overflow-hidden">
+                <AIChat
+                  currentTheme={currentTheme}
+                  userName={currentUser?.name || 'Guest'}
+                  userRole={currentUser?.role || 'student'}
+                />
+              </div>
+            )}
             {activeView === 'customize' && <ColorCustomization currentTheme={currentTheme} />}
           </main>
         </div>
