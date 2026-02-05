@@ -146,15 +146,4 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
-  server: {
-    proxy: {
-      '/api/n8n': {
-        target: 'https://n8n-utech.utopiatech.dpdns.org',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/n8n/, ''),
-        timeout: 300000, // 5 minutes
-        proxyTimeout: 300000, // 5 minutes
-      },
-    },
-  },
 });

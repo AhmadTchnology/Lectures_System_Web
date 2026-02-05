@@ -78,6 +78,10 @@ const AIChat: React.FC<AIChatProps> = ({ currentTheme, userName, userRole }) => 
             });
 
             if (!response.ok) {
+                if (response.status === 504) {
+                    throw new Error('Timeout: The AI is taking too long to respond. The operation might still create a record in the database.');
+                }
+
                 const errorText = await response.text();
                 // Try to parse if it's JSON
                 try {
@@ -85,8 +89,11 @@ const AIChat: React.FC<AIChatProps> = ({ currentTheme, userName, userRole }) => 
                     console.error('Webhook error details:', errorJson);
                     throw new Error(errorJson.message || errorText || 'Failed to send message');
                 } catch (e) {
-                    console.error('Webhook error text:', errorText);
-                    throw new Error(errorText || 'Failed to send message');
+                    // Don't log full HTML for timeouts/proxies
+                    if (response.status !== 504) {
+                        console.error('Webhook error text:', errorText);
+                    }
+                    throw new Error('Failed to send message (Server Error)');
                 }
             }
 
@@ -114,11 +121,15 @@ const AIChat: React.FC<AIChatProps> = ({ currentTheme, userName, userRole }) => 
             };
 
             setMessages(prev => [...prev, botMessage]);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error sending message to webhook:', error);
+            const isTimeout = error.message && error.message.includes('Timeout');
+
             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
-                text: "Sorry, I couldn't connect to the server. Please try again later.\n\nعذراً، لم أتمكن من الاتصال بالخادم. يرجى المحاولة مرة أخرى لاحقاً.",
+                text: isTimeout
+                    ? "The AI is taking longer than expected to respond. The server connection timed out, but your message may have been processed.\n\nاستغرق الذكاء الاصطناعي وقتاً أطول من المتوقع. انتهت مهلة الاتصال بالخادم، لكن ربما تمت معالجة رسالتك."
+                    : "Sorry, I couldn't connect to the server. Please check your connection or try again later.\n\nعذراً، لم أتمكن من الاتصال بالخادم. يرجى التحقق من اتصالك والمحاولة مرة أخرى.",
                 sender: 'bot',
                 timestamp: Date.now()
             };
