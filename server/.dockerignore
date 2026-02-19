@@ -4,3 +4,5 @@ npm-debug.log
 .env.local
 .DS_Store
 *.log
+.agent
+CODEBASE_DOCUMENTATION.md

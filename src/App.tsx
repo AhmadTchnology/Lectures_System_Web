@@ -963,8 +963,8 @@ function App() {
     setUploadError('');
     setUploadProgress(0);
 
-    const ZIPLINE_URL = 'https://utech-storage.utopiatech.dpdns.org';
-    const API_TOKEN = 'MTc1OTQyMDM4MDg2OA==.NGRhY2YxMGEyMmQ0MDU5YWI2NDRhNWEzNjY3Njg4MmYuMDI5NWIyMTNkZTU2NWVmMTc3MmQwZjg5OTNiMTRkYWExYTBmNDFjYThmMjY2NjA0Y2I3MzkxYWU1YTdhMmU2YTcyZjcyNGRiNTIxMWI3OTUxMzdmN2IwMWQyZWE0MzIyODhmMjgwOTE2MDg1ODdhNzRmZjExMTkyY2U5ODFmZGZhYzlhOGM3YzdiNzdiYWEwNjA5MTgyNTM0YjgzOGFiNg==';
+    const ZIPLINE_URL = import.meta.env.VITE_ZIPLINE_URL;
+    const API_TOKEN = import.meta.env.VITE_ZIPLINE_API_TOKEN;
 
     try {
       const formData = new FormData();
