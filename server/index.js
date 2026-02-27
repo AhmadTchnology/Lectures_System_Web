@@ -2,9 +2,14 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const multer = require('multer');
+const FormData = require('form-data');
 
 const app = express();
 const PORT = process.env.PORT;
+
+// Configure multer for memory storage
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Parse allowed origins from environment variable
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -86,6 +91,55 @@ app.post('/api/chat', async (req, res) => {
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to connect to the AI service'
+        });
+    }
+});
+
+// Zipline Upload proxy endpoint
+app.post('/api/upload', upload.single('file'), async (req, res) => {
+    const ziplineUrl = process.env.ZIPLINE_URL || 'https://utech-storage.utopiatech.dpdns.org';
+    const apiToken = process.env.ZIPLINE_API_TOKEN;
+
+    if (!apiToken) {
+        console.error('ZIPLINE_API_TOKEN is not configured');
+        return res.status(500).json({ error: 'Server configuration error: missing upload token' });
+    }
+
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    try {
+        console.log(`[${new Date().toISOString()}] Received file upload request: ${req.file.originalname}`);
+
+        const formData = new FormData();
+        formData.append('file', req.file.buffer, {
+            filename: req.file.originalname,
+            contentType: req.file.mimetype,
+        });
+
+        const response = await axios.post(`${ziplineUrl}/api/upload`, formData, {
+            headers: {
+                ...formData.getHeaders(),
+                'Authorization': apiToken,
+            },
+            maxBodyLength: Infinity,
+            maxContentLength: Infinity,
+        });
+
+        console.log(`[${new Date().toISOString()}] File uploaded to Zipline successfully`);
+        res.json(response.data);
+
+    } catch (error) {
+        console.error(`[${new Date().toISOString()}] Error proxying to Zipline:`, error.message);
+
+        if (error.response) {
+            return res.status(error.response.status).json(error.response.data);
+        }
+
+        return res.status(500).json({
+            error: 'Upload Failed',
+            message: 'Failed to upload file to the storage server'
         });
     }
 });

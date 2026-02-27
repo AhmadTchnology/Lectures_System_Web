@@ -154,37 +154,36 @@ const ColorCustomization: React.FC<ColorCustomizationProps> = ({ currentTheme })
             <button
               key={template.id}
               onClick={() => handleTemplateSelect(template)}
-              className={`
-                relative flex flex-col items-start p-3 rounded-lg border transition-all
-                ${activeTemplateId === template.id
-                  ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
-                  : 'border-border hover:border-primary/50 hover:bg-gray-50 dark:hover:bg-gray-800'}
-              `}
+              className="template-card"
+              style={{
+                borderColor: activeTemplateId === template.id ? 'var(--primary-color)' : 'var(--border-color)',
+                background: activeTemplateId === template.id ? 'var(--bg-light)' : 'var(--card-bg)',
+              }}
             >
               <div className="flex gap-2 mb-2 w-full">
                 <div
-                  className="w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
+                  className="template-color-dot"
                   style={{ backgroundColor: template.colors.primaryColor }}
                   title="Primary Color"
                 />
                 <div
-                  className="w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
+                  className="template-color-dot"
                   style={{ backgroundColor: template.colors.backgroundColor }}
                   title="Background Color"
                 />
                 <div
-                  className="w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
+                  className="template-color-dot"
                   style={{ backgroundColor: template.colors.cardBackground }}
                   title="Card Background"
                 />
               </div>
-              <div className="text-left">
-                <div className="font-medium text-sm text-primary">{template.name}</div>
-                <div className="text-xs text-secondary mt-0.5 line-clamp-1">{template.description}</div>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontWeight: 500, fontSize: '0.875rem', color: 'var(--primary-color)' }}>{template.name}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{template.description}</div>
               </div>
 
               {activeTemplateId === template.id && (
-                <div className="absolute top-2 right-2 text-primary">
+                <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', color: 'var(--primary-color)' }}>
                   <Check size={16} />
                 </div>
               )}

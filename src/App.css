@@ -3,7 +3,8 @@
   --primary-color: #4f46e5;
   --primary-dark: #4338ca;
   --primary-light: #818cf8;
-  --vibrant-blue: #0ea5e9; /* Added vibrant blue color */
+  --vibrant-blue: #0ea5e9;
+  /* Added vibrant blue color */
   --success-color: #10b981;
   --warning-color: #f59e0b;
   --danger-color: #ef4444;
@@ -29,20 +30,34 @@
 
 /* Dark mode variables */
 [data-theme="dark"] {
-  --primary-color: #8b5cf6; /* More vibrant purple */
-  --primary-dark: #7c3aed; /* Deeper purple */
-  --primary-light: #a78bfa; /* Lighter purple */
-  --vibrant-blue: #60a5fa; /* Brighter blue for better visibility */
-  --success-color: #10b981; /* Slightly darker green for better contrast */
-  --warning-color: #f59e0b; /* Slightly darker amber for better contrast */
-  --danger-color: #ef4444; /* Brighter red */
-  --text-primary: #f8fafc; /* Slightly brighter white */
-  --text-secondary: #e2e8f0; /* Slightly brighter secondary text */
-  --text-light: #cbd5e1; /* Lighter gray for better readability */
-  --border-color: #475569; /* Lighter border for better visibility */
-  --card-bg: #1e293b; /* Slightly bluer dark background */
-  --bg-light: #334155; /* Lighter background for better contrast */
-  --bg-body: #0f172a; /* Deep blue-black background */
+  --primary-color: #8b5cf6;
+  /* More vibrant purple */
+  --primary-dark: #7c3aed;
+  /* Deeper purple */
+  --primary-light: #a78bfa;
+  /* Lighter purple */
+  --vibrant-blue: #60a5fa;
+  /* Brighter blue for better visibility */
+  --success-color: #10b981;
+  /* Slightly darker green for better contrast */
+  --warning-color: #f59e0b;
+  /* Slightly darker amber for better contrast */
+  --danger-color: #ef4444;
+  /* Brighter red */
+  --text-primary: #f8fafc;
+  /* Slightly brighter white */
+  --text-secondary: #e2e8f0;
+  /* Slightly brighter secondary text */
+  --text-light: #cbd5e1;
+  /* Lighter gray for better readability */
+  --border-color: #475569;
+  /* Lighter border for better visibility */
+  --card-bg: #1e293b;
+  /* Slightly bluer dark background */
+  --bg-light: #334155;
+  /* Lighter background for better contrast */
+  --bg-body: #0f172a;
+  /* Deep blue-black background */
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
@@ -164,6 +179,7 @@ body {
   margin-bottom: 0.5rem;
 }
 
+.nav-links a,
 .nav-links button {
   display: flex;
   align-items: center;
@@ -176,15 +192,20 @@ body {
   text-align: left;
   cursor: pointer;
   transition: var(--transition);
+  text-decoration: none;
 }
 
-.nav-links button svg {
-  margin-right: 0.75rem;
-}
-
-.nav-links button:hover, .nav-links button.active {
+.nav-links a:hover,
+.nav-links a.active,
+.nav-links button:hover,
+.nav-links button.active {
   background-color: var(--bg-light);
   color: var(--primary-color);
+}
+
+.nav-links a svg,
+.nav-links button svg {
+  margin-right: 0.75rem;
 }
 
 .nav-footer {
@@ -292,7 +313,9 @@ body {
 }
 
 /* Buttons */
-.btn-primary, .btn-secondary, .btn-danger {
+.btn-primary,
+.btn-secondary,
+.btn-danger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -306,14 +329,18 @@ body {
   text-decoration: none !important;
 }
 
-a.btn-primary, a.btn-secondary, a.btn-danger {
+a.btn-primary,
+a.btn-secondary,
+a.btn-danger {
   text-decoration: none !important;
-  text-color: white !important;
+  color: white !important;
 }
 
-a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
+a.btn-primary:hover,
+a.btn-secondary:hover,
+a.btn-danger:hover {
   text-decoration: none !important;
-  text-color: white !important;
+  color: white !important;
 }
 
 .btn-primary {
@@ -323,7 +350,7 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
 
 .btn-primary:hover {
   background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
-  text-color: white !important;
+  color: white !important;
 }
 
 /* Enhanced PDF button hover state in dark mode */
@@ -331,27 +358,24 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
   background: linear-gradient(135deg, var(--vibrant-blue) 0%, var(--primary-light) 100%);
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
-  text-color: white !important;
+  color: white !important;
 }
 
 .btn-secondary {
   background-color: var(--bg-light);
   color: var(--text-primary);
   text-decoration: none;
-  text-color: white !important;
 }
 
 .btn-secondary:hover {
   background-color: #e5e7eb;
   text-decoration: none;
-  text-color: white !important;
 }
 
 [data-theme="dark"] .btn-secondary:hover {
   background-color: var(--primary-dark);
   color: white;
   text-decoration: none;
-  text-color: white !important;
 }
 
 .btn-danger {
@@ -754,13 +778,15 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
   gap: 1rem;
 }
 
-.pdf-navigation, .pdf-zoom {
+.pdf-navigation,
+.pdf-zoom {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.page-info, .zoom-info {
+.page-info,
+.zoom-info {
   padding: 0.5rem 0.75rem;
   background-color: var(--bg-light);
   border-radius: var(--radius);
@@ -776,7 +802,8 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
   overflow: auto;
 }
 
-.pdf-loading, .pdf-error {
+.pdf-loading,
+.pdf-error {
   position: absolute;
   top: 0;
   left: 0;
@@ -941,7 +968,9 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* No Results */
@@ -1008,11 +1037,11 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
   .mobile-header {
     display: flex;
   }
-  
+
   .dashboard {
     flex-direction: column;
   }
-  
+
   .sidebar {
     position: fixed;
     top: 0;
@@ -1022,45 +1051,47 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
     width: 280px;
     box-shadow: var(--shadow-xl);
   }
-  
+
   .sidebar-open {
     transform: translateX(0);
   }
-  
+
   .close-sidebar {
     display: block;
   }
-  
+
   .main-content {
     padding: 1rem;
     margin-top: 60px;
   }
-  
+
   .pdf-viewer {
     height: calc(100vh - 220px);
   }
-  
+
   .about-header {
     height: 180px;
   }
-  
+
   .search-filter-container {
     flex-direction: column;
   }
-  
-  .user-grid, .lecture-grid, .announcement-grid {
+
+  .user-grid,
+  .lecture-grid,
+  .announcement-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .pdf-viewer-header {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .pdf-controls {
     flex-direction: column;
   }
-  
+
   .notification-dropdown {
     width: 100%;
     right: 0;
@@ -1069,7 +1100,10 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
 }
 
 @media (min-width: 769px) and (max-width: 1024px) {
-  .user-grid, .lecture-grid, .announcement-grid {
+
+  .user-grid,
+  .lecture-grid,
+  .announcement-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -1392,12 +1426,12 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
     max-width: 90vw;
     width: 320px;
   }
-  
+
   /* Ensure dropdown stays in viewport on mobile */
   .mobile-header .notification-container {
     position: relative;
   }
-  
+
   .mobile-header .notification-dropdown {
     right: -10px;
     max-height: 80vh;
@@ -1406,8 +1440,15 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .notification-header {
@@ -1630,11 +1671,11 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
   .mobile-header {
     display: flex;
   }
-  
+
   .dashboard {
     flex-direction: column;
   }
-  
+
   .sidebar {
     position: fixed;
     top: 0;
@@ -1644,15 +1685,15 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
     width: 280px;
     box-shadow: var(--shadow-xl);
   }
-  
+
   .sidebar-open {
     transform: translateX(0);
   }
-  
+
   .close-sidebar {
     display: block;
   }
-  
+
   .main-content {
     padding: 1rem;
     margin-top: 60px;
@@ -1888,25 +1929,25 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
   .sm\:flex-row {
     flex-direction: row;
   }
-  
+
   .sm\:items-center {
     align-items: center;
   }
-  
+
   .sm\:w-auto {
     width: auto;
   }
-  
+
   .sm\:inline {
     display: inline;
   }
-  
+
   .sm\:hidden {
     display: none;
   }
 }
 
-.space-y-1 > * + * {
+.space-y-1>*+* {
   margin-top: 0.25rem;
 }
 
@@ -1914,88 +1955,90 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
   .lecture-card-footer .flex {
     flex-wrap: wrap;
   }
-  
+
   .lecture-card-footer .btn-icon {
     flex: 0 0 auto;
   }
-  
+
   .lecture-card-footer a.btn-secondary {
     flex: 1 1 100%;
     margin-bottom: 0.5rem;
   }
-  
+
   .lecture-tags {
     margin-top: 0.5rem;
   }
-  
+
   .announcement-card-footer {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .announcement-card-footer button {
     width: 100%;
   }
-  
+
   .pdf-viewer {
     height: calc(100vh - 220px);
   }
-  
+
   .about-header {
     height: 180px;
   }
-  
+
   .search-filter-container {
     flex-direction: column;
   }
-  
-  .user-grid, .lecture-grid, .announcement-grid {
+
+  .user-grid,
+  .lecture-grid,
+  .announcement-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .pdf-viewer-header {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .pdf-controls {
     flex-direction: column;
   }
-  
+
   /* Color Customization Mobile Styles */
   .color-customization-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   .color-control-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
   }
-  
+
   .color-control-input {
     width: 100%;
     justify-content: flex-start;
   }
-  
+
   .color-hex-input {
     flex: 1;
     min-width: 0;
   }
-  
+
   .section-title {
     font-size: 1.25rem;
   }
-  
+
   .card-title {
     font-size: 1rem;
   }
-  
+
   .preview-card {
     padding: 1rem;
   }
-  
+
   .preview-card h4 {
     font-size: 1rem;
   }
@@ -2007,27 +2050,58 @@ a.btn-primary:hover, a.btn-secondary:hover, a.btn-danger:hover {
     width: 45px;
     height: 35px;
   }
-  
+
   .color-hex-input {
     font-size: 0.75rem;
     padding: 0.4rem;
   }
-  
+
   .color-control-label label {
     font-size: 0.8125rem;
   }
-  
+
   .card {
     padding: 1rem;
   }
-  
+
   .alert {
     padding: 0.75rem;
     font-size: 0.875rem;
   }
-  
-  .btn-primary, .btn-secondary, .btn-danger {
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
     padding: 0.625rem 1rem;
     font-size: 0.875rem;
   }
+}
+
+/* Color Template Cards */
+.template-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.75rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  transition: var(--transition);
+  cursor: pointer;
+  text-align: left;
+}
+
+.template-card:hover {
+  border-color: var(--primary-color);
+  background-color: var(--bg-light) !important;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
+.template-color-dot {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow);
 }

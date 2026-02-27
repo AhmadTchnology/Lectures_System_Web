@@ -64,20 +64,20 @@ const CacheManager: React.FC<CacheManagerProps> = ({ onClose }) => {
               <HardDrive size={24} className="text-blue-600 dark:text-blue-400" />
               <h3 className="text-lg font-semibold dark:text-white">Storage Usage</h3>
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex justify-between text-sm dark:text-gray-300">
                 <span>Used: {formatSize(cacheStats.totalSize)}</span>
                 <span>Limit: {formatSize(maxCacheSize)}</span>
               </div>
-              
+
               <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3">
                 <div
                   className="bg-blue-600 h-3 rounded-full transition-all duration-300"
                   style={{ width: `${Math.min(usagePercentage, 100)}%` }}
                 ></div>
               </div>
-              
+
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 {cacheStats.lectureCount} lecture{cacheStats.lectureCount !== 1 ? 's' : ''} cached
               </div>
@@ -128,7 +128,7 @@ const CacheManager: React.FC<CacheManagerProps> = ({ onClose }) => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <button
                       onClick={() => handleRemoveLecture(lecture.id, lecture.title)}
                       disabled={isLoading}
