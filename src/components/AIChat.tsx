@@ -55,11 +55,8 @@ const AIChat: React.FC<AIChatProps> = ({ currentTheme, userName, userRole }) => 
         setIsTyping(true);
 
         try {
-            const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL;
-
-            if (!webhookUrl) {
-                throw new Error('Webhook URL not configured');
-            }
+            const baseUrl = import.meta.env.VITE_API_URL;
+            const chatUrl = `${baseUrl}/api/chat`;
 
             const payload = {
                 user: userName,
@@ -69,7 +66,7 @@ const AIChat: React.FC<AIChatProps> = ({ currentTheme, userName, userRole }) => 
                 date: new Date().toLocaleDateString()
             };
 
-            const response = await fetch(webhookUrl, {
+            const response = await fetch(chatUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

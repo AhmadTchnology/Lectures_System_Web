@@ -61,7 +61,7 @@ export async function deleteLecture(lectureId: string) {
 }
 
 export async function uploadPdfToServer(file: File): Promise<string> {
-    const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:7444';
+    const SERVER_URL = import.meta.env.VITE_API_URL;
 
     const formData = new FormData();
     formData.append('file', file);
