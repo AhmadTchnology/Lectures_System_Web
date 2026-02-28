@@ -115,18 +115,33 @@ export async function toggleCompletion(
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
     const completedLectures = userDoc.data()?.completedLectures || [];
+    const completionTimestamps = userDoc.data()?.completionTimestamps || {};
 
-    const updatedCompleted = completedLectures.includes(lectureId)
-        ? completedLectures.filter((id: string) => id !== lectureId)
-        : [...completedLectures, lectureId];
+    const isCompleting = !completedLectures.includes(lectureId);
+    const updatedCompleted = isCompleting
+        ? [...completedLectures, lectureId]
+        : completedLectures.filter((id: string) => id !== lectureId);
 
-    OfflineAuthManager.updateCachedUser({ completedLectures: updatedCompleted });
-
-    if (navigator.onLine) {
-        await updateDoc(userRef, { completedLectures: updatedCompleted });
+    const updatedTimestamps = { ...completionTimestamps };
+    if (isCompleting) {
+        updatedTimestamps[lectureId] = Date.now();
+    } else {
+        delete updatedTimestamps[lectureId];
     }
 
-    return updatedCompleted;
+    OfflineAuthManager.updateCachedUser({
+        completedLectures: updatedCompleted,
+        completionTimestamps: updatedTimestamps,
+    });
+
+    if (navigator.onLine) {
+        await updateDoc(userRef, {
+            completedLectures: updatedCompleted,
+            completionTimestamps: updatedTimestamps,
+        });
+    }
+
+    return { completedLectures: updatedCompleted, completionTimestamps: updatedTimestamps };
 }
 
 export function handleViewPDF(lecture: Lecture) {

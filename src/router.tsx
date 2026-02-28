@@ -3,6 +3,9 @@ import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import RoleRoute from './components/layout/RoleRoute';
 import LoginPage from './features/auth/LoginPage';
+import DashboardPage from './features/dashboard/DashboardPage';
+import NotesSearchPage from './features/notes/NotesSearchPage';
+import SchedulePage from './features/schedule/SchedulePage';
 import LecturesPage from './features/lectures/LecturesPage';
 import AnnouncementsPage from './features/announcements/AnnouncementsPage';
 import UserManagementPage from './features/users/UserManagementPage';
@@ -25,7 +28,19 @@ export const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <Navigate to="/lectures" replace />,
+                element: <Navigate to="/dashboard" replace />,
+            },
+            {
+                path: 'dashboard',
+                element: <DashboardPage />,
+            },
+            {
+                path: 'notes',
+                element: <NotesSearchPage />,
+            },
+            {
+                path: 'schedule',
+                element: <SchedulePage />,
             },
             {
                 path: 'lectures',
@@ -59,6 +74,6 @@ export const router = createBrowserRouter([
     },
     {
         path: '*',
-        element: <Navigate to="/lectures" replace />,
+        element: <Navigate to="/dashboard" replace />,
     },
 ]);

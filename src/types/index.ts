@@ -9,8 +9,20 @@ export interface User {
     createdAt?: any;
     favorites?: string[];
     completedLectures?: string[];
+    completionTimestamps?: Record<string, number>;
+    studySchedule?: StudySession[];
     lastSignOut?: number;
     unreadAnnouncements?: string[];
+}
+
+export interface StudySession {
+    id: string;
+    title: string;
+    lectureId?: string;
+    date: string; // YYYY-MM-DD format
+    startTime: string; // HH:mm format
+    endTime: string; // HH:mm format
+    isCompleted: boolean;
 }
 
 export interface Lecture {

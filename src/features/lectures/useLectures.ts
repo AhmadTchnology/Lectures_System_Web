@@ -80,8 +80,7 @@ export function useLectures(categories: Category[]) {
         try {
             const updatedFavorites = await lectureService.toggleFavorite(
                 currentUser.id,
-                lectureId,
-                currentUser.favorites || []
+                lectureId
             );
             setCurrentUser((prev) => (prev ? { ...prev, favorites: updatedFavorites } : prev));
         } catch (error) {
@@ -92,13 +91,16 @@ export function useLectures(categories: Category[]) {
     const toggleCompletion = async (lectureId: string) => {
         if (!currentUser) return;
         try {
-            const updatedCompleted = await lectureService.toggleCompletion(
+            const result = await lectureService.toggleCompletion(
                 currentUser.id,
-                lectureId,
-                currentUser.completedLectures || []
+                lectureId
             );
             setCurrentUser((prev) =>
-                prev ? { ...prev, completedLectures: updatedCompleted } : prev
+                prev ? {
+                    ...prev,
+                    completedLectures: result.completedLectures,
+                    completionTimestamps: result.completionTimestamps,
+                } : prev
             );
         } catch (error) {
             console.error('Error toggling completion:', error);

@@ -6,6 +6,7 @@ interface CachedUser {
   name: string;
   favorites?: string[];
   completedLectures?: string[];
+  completionTimestamps?: Record<string, number>;
   unreadAnnouncements?: string[];
   cachedAt: number;
 }
@@ -31,6 +32,7 @@ export class OfflineAuthManager {
           name: user.name,
           favorites: user.favorites || [],
           completedLectures: user.completedLectures || [],
+          completionTimestamps: user.completionTimestamps || {},
           unreadAnnouncements: user.unreadAnnouncements || [],
           cachedAt: Date.now(),
         },
@@ -64,7 +66,7 @@ export class OfflineAuthManager {
       }
 
       console.log('✅ Found valid cached session:', session.user.email);
-      
+
       // Update last activity
       session.lastActivity = Date.now();
       localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(session));

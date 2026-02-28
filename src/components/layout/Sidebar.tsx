@@ -10,6 +10,9 @@ import {
     Menu,
     X,
     User,
+    Edit3,
+    Calendar,
+    BarChart3,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAnnouncements } from '../../features/announcements/useAnnouncements';
@@ -125,10 +128,27 @@ export default function Sidebar() {
 
                     <ul className="nav-links">
                         <li>
+                            <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'active' : ''} onClick={closeSidebar}>
+                                <BarChart3 size={20} /> Dashboard
+                            </NavLink>
+                        </li>
+                        <li>
                             <NavLink to="/lectures" className={({ isActive }) => isActive ? 'active' : ''} onClick={closeSidebar}>
                                 <FileText size={20} /> Lectures
                             </NavLink>
                         </li>
+                        <li>
+                            <NavLink to="/notes" className={({ isActive }) => isActive ? 'active' : ''} onClick={closeSidebar}>
+                                <Edit3 size={20} /> My Notes
+                            </NavLink>
+                        </li>
+                        {currentUser?.role === 'student' && (
+                            <li>
+                                <NavLink to="/schedule" className={({ isActive }) => isActive ? 'active' : ''} onClick={closeSidebar}>
+                                    <Calendar size={20} /> Study Schedule
+                                </NavLink>
+                            </li>
+                        )}
                         <li>
                             <NavLink to="/chat" className={({ isActive }) => isActive ? 'active' : ''} onClick={closeSidebar}>
                                 <MessageSquare size={20} /> AI Chat

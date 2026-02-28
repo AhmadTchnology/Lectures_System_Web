@@ -1,9 +1,13 @@
-import { FileText, Heart, HeartOff, Search, Filter, CheckCircle, Trash } from 'lucide-react';
+import { useState } from 'react';
+import { Search, Filter, CheckCircle, Edit3, MessageCircle, Heart, HeartOff, Trash, FileText } from 'lucide-react';
 import classNames from 'classnames';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCategories } from '../categories/useCategories';
 import { useLectures } from './useLectures';
 import UploadPage from './UploadPage';
+import LectureNotesPanel from '../notes/LectureNotesPanel';
+import DiscussionPanel from '../discussions/DiscussionPanel';
+import type { Lecture } from '../../types';
 
 export default function LecturesPage() {
     const { currentUser } = useAuth();
@@ -21,6 +25,9 @@ export default function LecturesPage() {
         deleteLecture,
         handleViewPDF,
     } = useLectures(categories);
+
+    const [selectedNotesLecture, setSelectedNotesLecture] = useState<Lecture | null>(null);
+    const [selectedDiscussionLecture, setSelectedDiscussionLecture] = useState<Lecture | null>(null);
 
     return (
         <div className="content-container">
@@ -76,6 +83,18 @@ export default function LecturesPage() {
                             <div key={lecture.id} className="lecture-card">
                                 <div className="lecture-card-header">
                                     <h4 className="lecture-title">{lecture.title}</h4>
+
+                                    {currentUser?.role === 'student' && (
+                                        <div className="lecture-card-top-toggles">
+                                            <button onClick={() => toggleFavorite(lecture.id)} className={classNames('btn-icon-sm', { 'text-red-500': currentUser?.favorites?.includes(lecture.id) })} title="Favorite">
+                                                <Heart size={16} fill={currentUser?.favorites?.includes(lecture.id) ? '#ef4444' : 'none'} />
+                                            </button>
+                                            <button onClick={() => toggleCompletion(lecture.id)} className={classNames('btn-icon-sm', { 'text-green-500': currentUser?.completedLectures?.includes(lecture.id) })} title="Mark Complete">
+                                                <CheckCircle size={16} fill={currentUser?.completedLectures?.includes(lecture.id) ? '#10b981' : 'none'} />
+                                            </button>
+                                        </div>
+                                    )}
+
                                     <div className="lecture-tags">
                                         <span className="lecture-tag">{lecture.subject}</span>
                                         <span className="lecture-tag">{lecture.stage}</span>
@@ -85,23 +104,33 @@ export default function LecturesPage() {
                                     <span className="lecture-date">Uploaded: {lecture.uploadDate}</span>
                                 </div>
                                 <div className="lecture-card-footer">
-                                    <div className="flex gap-2">
-                                        <button onClick={() => handleViewPDF(lecture)} className="btn-secondary flex-1">
+                                    <div className="lecture-card-main-actions">
+                                        <button
+                                            className="btn-primary"
+                                            onClick={() => handleViewPDF(lecture)}
+                                            title="View PDF"
+                                        >
                                             <FileText size={18} /> View PDF
                                         </button>
-                                        {currentUser?.role === 'student' && (
-                                            <>
-                                                <button onClick={() => toggleFavorite(lecture.id)} className={classNames('btn-icon', { 'btn-favorite': currentUser?.favorites?.includes(lecture.id) })}>
-                                                    <Heart size={20} fill={currentUser?.favorites?.includes(lecture.id) ? '#ef4444' : 'none'} />
-                                                </button>
-                                                <button onClick={() => toggleCompletion(lecture.id)} className={classNames('btn-icon', { 'btn-completed': currentUser?.completedLectures?.includes(lecture.id) })}>
-                                                    <CheckCircle size={20} fill={currentUser?.completedLectures?.includes(lecture.id) ? '#10b981' : 'none'} />
-                                                </button>
-                                            </>
-                                        )}
+                                    </div>
+                                    <div className="lecture-card-sub-actions">
+                                        <button
+                                            className="btn-secondary"
+                                            onClick={() => setSelectedNotesLecture(lecture)}
+                                            title="My Notes"
+                                        >
+                                            <Edit3 size={16} /> Notes
+                                        </button>
+                                        <button
+                                            className="btn-secondary"
+                                            onClick={() => setSelectedDiscussionLecture(lecture)}
+                                            title="Discussion"
+                                        >
+                                            <MessageCircle size={16} /> Discuss
+                                        </button>
                                         {(currentUser?.role === 'admin' || currentUser?.id === lecture.uploadedBy) && (
-                                            <button onClick={() => deleteLecture(lecture)} className="btn-danger" disabled={isLoading}>
-                                                <Trash size={18} />
+                                            <button onClick={() => deleteLecture(lecture)} className="btn-danger" disabled={isLoading} title="Delete">
+                                                <Trash size={16} />
                                             </button>
                                         )}
                                     </div>
@@ -115,6 +144,22 @@ export default function LecturesPage() {
                     )}
                 </div>
             </div>
+
+            {selectedNotesLecture && (
+                <LectureNotesPanel
+                    lecture={selectedNotesLecture}
+                    isOpen={!!selectedNotesLecture}
+                    onClose={() => setSelectedNotesLecture(null)}
+                />
+            )}
+
+            {selectedDiscussionLecture && (
+                <DiscussionPanel
+                    lecture={selectedDiscussionLecture}
+                    isOpen={!!selectedDiscussionLecture}
+                    onClose={() => setSelectedDiscussionLecture(null)}
+                />
+            )}
         </div>
     );
 }
