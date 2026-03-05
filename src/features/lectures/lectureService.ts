@@ -8,6 +8,7 @@ import {
     onSnapshot,
     updateDoc,
     getDoc,
+    increment,
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 import type { Lecture } from '../../types';
@@ -145,6 +146,13 @@ export async function toggleCompletion(
 }
 
 export function handleViewPDF(lecture: Lecture) {
+    // Increment view count (fire-and-forget)
+    if (navigator.onLine) {
+        updateDoc(doc(db, 'lectures', lecture.id), {
+            viewCount: increment(1),
+        }).catch(() => { });
+    }
+
     if (!navigator.onLine) {
         fetch(lecture.pdfUrl)
             .then((response) => {

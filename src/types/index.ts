@@ -12,6 +12,7 @@ export interface User {
     completionTimestamps?: Record<string, number>;
     studySchedule?: StudySession[];
     lastSignOut?: number;
+    lastActive?: number;
     unreadAnnouncements?: string[];
 }
 
@@ -33,6 +34,8 @@ export interface Lecture {
     pdfUrl: string;
     uploadedBy: string;
     uploadDate: string;
+    viewCount?: number;
+    targetGroups?: string[];
 }
 
 export interface Announcement {
@@ -44,6 +47,7 @@ export interface Announcement {
     creatorName?: string;
     createdAt: any;
     expiryDate?: string;
+    targetGroups?: string[];
 }
 
 export interface Category {
@@ -59,4 +63,14 @@ export interface EditUserState {
     email: string;
     role: Role;
     isOpen: boolean;
+}
+
+export interface Group {
+    id: string;
+    name: string;
+    description?: string;
+    stage?: string;
+    members: string[];
+    createdBy: string;
+    createdAt: any;
 }

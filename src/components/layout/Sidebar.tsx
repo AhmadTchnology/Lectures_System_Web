@@ -13,6 +13,9 @@ import {
     Edit3,
     Calendar,
     BarChart3,
+    TrendingUp,
+    ClipboardList,
+    UsersRound,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAnnouncements } from '../../features/announcements/useAnnouncements';
@@ -155,6 +158,11 @@ export default function Sidebar() {
                             </NavLink>
                         </li>
                         <li>
+                            <NavLink to="/quizzes" className={({ isActive }) => isActive ? 'active' : ''} onClick={closeSidebar}>
+                                <ClipboardList size={20} /> Quizzes
+                            </NavLink>
+                        </li>
+                        <li>
                             <NavLink to="/announcements" className={({ isActive }) => isActive ? 'active' : ''} onClick={closeSidebar}>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -168,6 +176,20 @@ export default function Sidebar() {
                             <li>
                                 <NavLink to="/admin/users" className={({ isActive }) => isActive ? 'active' : ''} onClick={closeSidebar}>
                                     <Users size={20} /> Users
+                                </NavLink>
+                            </li>
+                        )}
+                        {(currentUser?.role === 'admin' || currentUser?.role === 'teacher') && (
+                            <li>
+                                <NavLink to="/admin/analytics" className={({ isActive }) => isActive ? 'active' : ''} onClick={closeSidebar}>
+                                    <TrendingUp size={20} /> Analytics
+                                </NavLink>
+                            </li>
+                        )}
+                        {currentUser?.role === 'admin' && (
+                            <li>
+                                <NavLink to="/admin/groups" className={({ isActive }) => isActive ? 'active' : ''} onClick={closeSidebar}>
+                                    <UsersRound size={20} /> Groups
                                 </NavLink>
                             </li>
                         )}
